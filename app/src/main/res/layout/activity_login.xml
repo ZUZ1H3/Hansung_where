@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:background="#F9F9FB"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".LoginActivity">
+
+    <ImageView
+        android:id="@+id/back"
+        android:layout_width="9dp"
+        android:layout_height="15dp"
+        android:background="@drawable/ic_back"
+        android:layout_marginTop="25dp"
+        android:layout_marginLeft="20dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="로그인"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_bold"
+        android:layout_marginTop="24dp"
+        android:layout_marginLeft="157dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <ImageView
+        android:layout_width="20dp"
+        android:layout_height="28dp"
+        android:background="@drawable/ic_ping"
+        android:layout_marginTop="124dp"
+        android:layout_marginLeft="170dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="찾아부기"
+        android:textSize="24sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_bold"
+        android:layout_marginTop="160dp"
+        android:layout_marginLeft="134dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <TextView
+        android:id="@+id/explain"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="학번/비밀번호로 로그인이 가능합니다."
+        android:textSize="12sp"
+        android:textColor="#767676"
+        android:fontFamily="@font/neo_regular"
+        android:layout_marginTop="244dp"
+        android:layout_marginLeft="30dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <ImageView
+        android:layout_width="316dp"
+        android:layout_height="42dp"
+        android:background="@drawable/iv_edit"
+        android:layout_marginTop="265dp"
+        android:layout_marginLeft="22dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <EditText
+        android:id="@+id/id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="학번 입력"
+        android:background="@android:color/transparent"
+        android:textSize="14sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_regular"
+        android:layout_marginTop="279dp"
+        android:layout_marginLeft="39dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <ImageView
+        android:layout_width="316dp"
+        android:layout_height="42dp"
+        android:background="@drawable/iv_edit"
+        android:layout_marginTop="314dp"
+        android:layout_marginLeft="22dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <EditText
+        android:id="@+id/pw"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="비밀번호 입력"
+        android:background="@android:color/transparent"
+        android:textSize="14sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_regular"
+        android:layout_marginTop="329dp"
+        android:layout_marginLeft="39dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <TextView
+        android:id="@+id/findIdPw"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ID/PW 찾기"
+        android:textSize="12sp"
+        android:textColor="#767676"
+        android:fontFamily="@font/neo_regular"
+        android:layout_marginTop="370dp"
+        android:layout_marginLeft="30dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <ImageView
+        android:id="@+id/login"
+        android:layout_width="316dp"
+        android:layout_height="50dp"
+        android:background="@drawable/iv_login"
+        android:layout_marginTop="396dp"
+        android:layout_marginLeft="22dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
