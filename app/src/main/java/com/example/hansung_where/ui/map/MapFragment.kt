@@ -1,17 +1,17 @@
-package com.example.hansung_where.ui.home
+package com.example.hansung_where.ui.map
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import com.example.hansung_where.databinding.FragmentHomeBinding
+import com.example.hansung_where.databinding.FragmentMapBinding
 
-class HomeFragment : Fragment() {
+class MapFragment : Fragment() {
 
-    private var _binding: FragmentHomeBinding? = null
+    private var _binding: FragmentMapBinding? = null
+
 
     private val binding get() = _binding!!
 
@@ -20,11 +20,12 @@ class HomeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val homeViewModel =
-            ViewModelProvider(this).get(HomeViewModel::class.java)
+        val dashboardViewModel =
+            ViewModelProvider(this).get(MapViewModel::class.java)
 
-        _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        _binding = FragmentMapBinding.inflate(inflater, container, false)
         val root: View = binding.root
+
 
         return root
     }

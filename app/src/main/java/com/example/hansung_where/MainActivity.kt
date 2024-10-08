@@ -26,9 +26,6 @@ class MainActivity : AppCompatActivity() {
                 R.id.navigation_home, R.id.navigation_dashboard, R.id.navigation_notifications
             )
         )
-        // 툴바 관련 코드 삭제
-        // setSupportActionBar(toolbar)
-
         navView.setupWithNavController(navController)
     }
 
