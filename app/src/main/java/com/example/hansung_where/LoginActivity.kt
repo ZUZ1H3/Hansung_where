@@ -1,6 +1,7 @@
 package com.example.hansung_where
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.widget.*
@@ -17,6 +18,9 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var findIdPw: TextView
     private lateinit var id: EditText
     private lateinit var pw: EditText
+    // 로그인 상태를 저장할 sharedPreferences
+    private lateinit var loginPref: SharedPreferences
+    private lateinit var editor: SharedPreferences.Editor
 
     // 쿠키 관리
     private val client = OkHttpClient.Builder()
@@ -34,6 +38,9 @@ class LoginActivity : AppCompatActivity() {
         findIdPw = findViewById(R.id.findIdPw)
         id = findViewById(R.id.id)
         pw = findViewById(R.id.pw)
+        // sharedPref 초기화
+        loginPref = getSharedPreferences("Logins", MODE_PRIVATE)
+        editor = loginPref.edit()
 
         back.setOnClickListener { finish() }
         login.setOnClickListener { handleLogin() }
@@ -124,6 +131,9 @@ class LoginActivity : AppCompatActivity() {
                         if (!successText.contains("잘못 입력")) { // 잘못 입력된 단어가 없으면 로그인 성공 처리
                             // 로그인 성공
                             Toast.makeText(this@LoginActivity, "로그인 성공", Toast.LENGTH_SHORT).show()
+                            editor.putBoolean("isLog", true)
+                            editor.apply()
+
                             val intent = Intent(this@LoginActivity, MainActivity::class.java)
                             startActivity(intent)
                         } else {  // 로그인 실패

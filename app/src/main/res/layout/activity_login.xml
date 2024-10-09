@@ -103,6 +103,7 @@
         android:textSize="14sp"
         android:textColor="@color/black"
         android:fontFamily="@font/neo_regular"
+        android:inputType="textPassword"
         android:layout_marginTop="314dp"
         android:layout_marginLeft="39dp"
         app:layout_constraintTop_toTopOf="parent"
