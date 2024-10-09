@@ -38,7 +38,6 @@
         android:layout_marginLeft="170dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent" />
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -72,17 +71,17 @@
         android:layout_marginLeft="22dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent" />
-
     <EditText
         android:id="@+id/id"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="280dp"
+        android:layout_height="42dp"
         android:hint="학번 입력"
         android:background="@android:color/transparent"
+        android:gravity="center_vertical"
         android:textSize="14sp"
         android:textColor="@color/black"
         android:fontFamily="@font/neo_regular"
-        android:layout_marginTop="279dp"
+        android:layout_marginTop="265dp"
         android:layout_marginLeft="39dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent" />
@@ -95,17 +94,16 @@
         android:layout_marginLeft="22dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent" />
-
     <EditText
         android:id="@+id/pw"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="280dp"
+        android:layout_height="42dp"
         android:hint="비밀번호 입력"
         android:background="@android:color/transparent"
         android:textSize="14sp"
         android:textColor="@color/black"
         android:fontFamily="@font/neo_regular"
-        android:layout_marginTop="329dp"
+        android:layout_marginTop="314dp"
         android:layout_marginLeft="39dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent" />

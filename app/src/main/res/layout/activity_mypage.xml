@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:background="#F9F9FB"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MypageActivity">
+
+    <ImageView
+        android:id="@+id/back"
+        android:layout_width="9dp"
+        android:layout_height="15dp"
+        android:background="@drawable/ic_back"
+        android:layout_marginTop="25dp"
+        android:layout_marginLeft="20dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="마이페이지"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_bold"
+        android:layout_marginTop="24dp"
+        android:layout_marginLeft="142dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <ImageView
+        android:id="@+id/bell"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:background="@drawable/ic_bell"
+        android:layout_marginTop="23dp"
+        android:layout_marginLeft="310dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <ImageView
+        android:id="@+id/profile"
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        android:src="@drawable/ic_boogi"
+        android:layout_marginTop="78dp"
+        android:layout_marginLeft="142dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <EditText
+        android:id="@+id/nickname"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:focusableInTouchMode="false"
+        android:text="부기"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_bold"
+        android:gravity="center"
+        android:maxLength="10"
+        android:maxLines="1"
+        android:paddingStart="30dp"
+        android:layout_marginStart="110dp"
+        android:layout_marginTop="164dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@+id/pen" />
+    <ImageView
+        android:id="@+id/pen"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:background="@drawable/ic_pen"
+        android:layout_marginTop="164dp"
+        android:layout_marginLeft="229dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <!-- 나의 뱃지 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="나의 뱃지"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_bold"
+        android:layout_marginTop="228dp"
+        android:layout_marginLeft="23dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:layout_width="340dp"
+        android:layout_height="100dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="256dp"
+        android:background="@drawable/iv_badge"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <ImageView
+        android:id="@+id/firstComment"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/iv_lock"
+        android:layout_marginTop="267dp"
+        android:layout_marginLeft="30dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/firstPost"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/iv_lock"
+        android:layout_marginTop="267dp"
+        android:layout_marginLeft="110dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/kind"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/iv_lock"
+        android:layout_marginTop="267dp"
+        android:layout_marginLeft="190dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/hero"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:background="@drawable/iv_lock"
+        android:layout_marginTop="267dp"
+        android:layout_marginLeft="270dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="첫 댓글"
+        android:textSize="10sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_regular"
+        android:layout_marginTop="334dp"
+        android:layout_marginLeft="45dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="첫 게시글"
+        android:textSize="10sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_regular"
+        android:layout_marginTop="334dp"
+        android:layout_marginLeft="120dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="친절함 최고"
+        android:textSize="10sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_regular"
+        android:layout_marginTop="334dp"
+        android:layout_marginLeft="195dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="분실물의 영웅"
+        android:textSize="10sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_regular"
+        android:layout_marginTop="334dp"
+        android:layout_marginLeft="270dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <!-- 프로필 선택 -->
+    <ImageView
+        android:id="@+id/profilebox"
+        android:layout_width="340dp"
+        android:layout_height="129dp"
+        android:background="@drawable/ic_profilebox"
+        android:layout_marginTop="190dp"
+        android:layout_marginLeft="10dp"
+        android:visibility="invisible"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/boogi"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@drawable/ic_boogi"
+        android:layout_marginTop="238dp"
+        android:layout_marginLeft="19dp"
+        android:visibility="invisible"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/kkukku"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@drawable/ic_kkukku"
+        android:layout_marginTop="238dp"
+        android:layout_marginLeft="86dp"
+        android:visibility="invisible"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/kkokko"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@drawable/ic_kkokko"
+        android:layout_marginTop="238dp"
+        android:layout_marginLeft="153dp"
+        android:visibility="invisible"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/sangzzi"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@drawable/ic_sangzzi"
+        android:layout_marginTop="238dp"
+        android:layout_marginLeft="220dp"
+        android:visibility="invisible"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/nyang"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:background="@drawable/ic_nyang"
+        android:layout_marginTop="238dp"
+        android:layout_marginLeft="287dp"
+        android:visibility="invisible"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <!-- 나의 활동 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="나의 활동"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_bold"
+        android:layout_marginTop="388dp"
+        android:layout_marginLeft="23dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/post"
+        android:layout_width="106dp"
+        android:layout_height="106dp"
+        android:background="@drawable/iv_mypost"
+        android:layout_marginTop="416dp"
+        android:layout_marginLeft="10dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/comment"
+        android:layout_width="106dp"
+        android:layout_height="106dp"
+        android:background="@drawable/iv_mycomment"
+        android:layout_marginTop="416dp"
+        android:layout_marginLeft="127dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/scrap"
+        android:layout_width="106dp"
+        android:layout_height="106dp"
+        android:background="@drawable/iv_myscrap"
+        android:layout_marginTop="416dp"
+        android:layout_marginLeft="244dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <!-- 설정 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="설정"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/neo_bold"
+        android:layout_marginTop="549dp"
+        android:layout_marginLeft="23dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:layout_width="340dp"
+        android:layout_height="100dp"
+        android:background="@drawable/iv_setting"
+        android:layout_marginTop="577dp"
+        android:layout_marginLeft="10dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/announce"
+        android:layout_width="300dp"
+        android:layout_height="26dp"
+        android:background="@drawable/iv_announce"
+        android:layout_marginTop="589dp"
+        android:layout_marginLeft="33dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+    <ImageView
+        android:id="@+id/inquire"
+        android:layout_width="300dp"
+        android:layout_height="26dp"
+        android:background="@drawable/iv_inquire"
+        android:layout_marginTop="639dp"
+        android:layout_marginLeft="34dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

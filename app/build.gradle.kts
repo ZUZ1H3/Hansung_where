@@ -52,4 +52,9 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // OkHttp 라이브러리
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+    // Jsoup
+    implementation("org.jsoup:jsoup:1.14.3")
 }
