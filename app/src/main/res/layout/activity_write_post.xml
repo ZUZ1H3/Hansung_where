@@ -7,47 +7,151 @@
     android:layout_height="match_parent"
     android:background="#F9F9FB"
     tools:context=".WritePostActivity">
+
     <ImageView
         android:id="@+id/back"
         android:layout_width="9dp"
         android:layout_height="15dp"
-        android:background="@drawable/ic_back"
-        android:layout_marginTop="25dp"
         android:layout_marginLeft="20dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent" />
+        android:layout_marginTop="25dp"
+        android:background="@drawable/ic_back"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="글쓰기"
-        android:textSize="16sp"
-        android:textColor="@color/black"
-        android:fontFamily="@font/neo_bold"
-        android:layout_marginTop="24dp"
         android:layout_marginLeft="157dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent" />
+        android:layout_marginTop="24dp"
+        android:fontFamily="@font/neo_bold"
+        android:text="글쓰기"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:layout_width="80dp"
         android:layout_height="30dp"
+        android:layout_marginLeft="270dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/custom_button"
+        android:fontFamily="@font/neo_bold"
         android:text="등록"
         android:textColor="#ffffff"
-        android:fontFamily="@font/neo_bold"
-        android:background="@drawable/custom_button"
-        app:layout_constraintTop_toTopOf="parent"
+        android:textSize="12dp"
         app:layout_constraintLeft_toLeftOf="parent"
-        android:layout_marginTop="18dp"
-        android:layout_marginLeft="270dp"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:layout_width="340dp"
         android:layout_height="440dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:background="@drawable/custom_background"
+        android:layout_marginLeft="10dp"
         android:layout_marginTop="65dp"
-        android:layout_marginLeft="10dp"/>
+        android:background="@drawable/custom_background"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
+    <EditText
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="80dp"
+        android:fontFamily="@font/neo_bold"
+        android:hint=" 제목"
+        android:textColorHint="#767676"
+        android:textSize="16dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:layout_width="290dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="35dp"
+        android:layout_marginTop="134dp"
+        android:background="@android:color/transparent"
+        android:fontFamily="@font/neo_regular"
+        android:hint="내용을 최소 10글자 이상 작성하세요.
+        \n\n찾아부기는 누구나 기분 좋게 참여할 수 있는 커뮤니티를 만들기 위해 이용 규칙을 제정하여 운영하고 있습니다. 위반 시 게시물이 삭제되고 서비스 이용이 일정 기간 제한될 수 있습니다.\n\n
+- 타인의 권리를 침해하거나 불쾌감을 주는 행위\n
+- 범죄, 불법 행위 등 법령 위반하는 행위\n
+- 욕설, 비하, 차별, 혐오, 폭력 관련 내용을 포함한 게시글\n     을 작성하는 행위\n
+- 음란물, 성적 수치심을 유발하는 행위\n
+- 스포일러, 공포, 속임, 놀라게 하는 행위"
+        android:lineSpacingExtra="1dp"
+        android:textColorHint="#767676"
+        android:textSize="12dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="25dp"
+        android:layout_marginTop="524dp"
+        android:fontFamily="@font/neo_bold"
+        android:text="키워드"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:layout_width="340dp"
+        android:layout_height="41dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="556dp"
+        android:background="@drawable/custom_background"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="24dp"
+        android:layout_marginTop="569dp"
+        android:fontFamily="@font/neo_bold"
+        android:text="#"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:layout_marginLeft="42dp"
+        android:layout_marginTop="570dp"
+        android:fontFamily="@font/neo_regular"
+        android:hint="키워드 입력 (최대 3개)"
+        android:textColorHint="#858585"
+        android:textSize="12sp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:layout_width="340dp"
+        android:layout_height="41dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="610dp"
+        android:background="@drawable/custom_background"
+        android:paddingTop="8dp"
+        android:paddingRight="34dp"
+        android:paddingBottom="8dp"
+        android:src="@drawable/ic_photo_registration"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="216dp"
+        android:layout_marginTop="624dp"
+        android:fontFamily="@font/neo_regular"
+        android:text="(0/4)"
+        android:textColor="#858585"
+        android:textSize="12sp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
