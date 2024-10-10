@@ -31,6 +31,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
+        android:id="@+id/submit"
         android:layout_width="80dp"
         android:layout_height="30dp"
         android:layout_marginLeft="270dp"
@@ -53,6 +54,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
+        android:id="@+id/title"
         android:layout_width="300dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="30dp"
@@ -65,6 +67,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
+        android:id="@+id/body"
         android:layout_width="290dp"
         android:layout_height="wrap_content"
         android:layout_marginLeft="35dp"
@@ -88,7 +91,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="25dp"
-        android:layout_marginTop="524dp"
+        android:layout_marginTop="523dp"
         android:fontFamily="@font/neo_bold"
         android:text="키워드"
         android:textColor="@color/black"
@@ -105,6 +108,20 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <Button
+        android:id="@+id/keywordBtn"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginLeft="321dp"
+        android:layout_marginTop="566dp"
+        android:fontFamily="@font/neo_bold"
+        android:text="+"
+        android:textColor="#ffffff"
+        android:textSize="16sp"
+        android:background="@drawable/custom_button"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -118,11 +135,12 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:id="@+id/keyword"
+        android:layout_width="250dp"
+        android:layout_height="24dp"
         android:background="@android:color/transparent"
-        android:layout_marginLeft="42dp"
-        android:layout_marginTop="570dp"
+        android:layout_marginLeft="44dp"
+        android:layout_marginTop="564dp"
         android:fontFamily="@font/neo_regular"
         android:hint="키워드 입력 (최대 3개)"
         android:textColorHint="#858585"
@@ -131,6 +149,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
+        android:id="@+id/photo"
         android:layout_width="340dp"
         android:layout_height="41dp"
         android:layout_marginLeft="10dp"
@@ -144,6 +163,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
+        android:id="@+id/photoNumber"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginLeft="216dp"
@@ -152,6 +172,26 @@
         android:text="(0/4)"
         android:textColor="#858585"
         android:textSize="12sp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/image_container"
+        android:layout_width="340dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="664dp"
+        android:layout_marginLeft="10dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/keyword_container"
+        android:layout_width="260dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="519dp"
+        android:layout_marginLeft="85dp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
