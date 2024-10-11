@@ -1,13 +1,20 @@
 package com.example.hansung_where
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.sql.Connection
 
 class MypageActivity : AppCompatActivity(), View.OnClickListener {
     private lateinit var main: ConstraintLayout
@@ -31,9 +38,23 @@ class MypageActivity : AppCompatActivity(), View.OnClickListener {
     private var isProfileVisible = false // 프로필 표시 상태
     private var isEdit = false // 닉네임 수정 상태
 
+    private lateinit var loginPref: SharedPreferences
+    private lateinit var editor: SharedPreferences.Editor
+    private lateinit var userId: String
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_mypage)
+
+        init()
+        loadNickname() // 닉네임 불러오기
+    }
+
+    private fun init() {
+        // sharedPref 초기화
+        loginPref = getSharedPreferences("Logins", MODE_PRIVATE)
+        editor = loginPref.edit()
+        userId = loginPref.getString("student_id", null) ?: ""
 
         // 초기화
         main = findViewById(R.id.main)
@@ -54,6 +75,7 @@ class MypageActivity : AppCompatActivity(), View.OnClickListener {
         inquire = findViewById(R.id.inquire)
         nickname = findViewById(R.id.nickname)
 
+        // 클릭 리스너 초기화
         back.setOnClickListener { finish() }
         pen.setOnClickListener(this)
         main.setOnClickListener(this)
@@ -142,6 +164,7 @@ class MypageActivity : AppCompatActivity(), View.OnClickListener {
                     }
 
                     // 유효성 검사 후 편집 불가능
+                    updateNickname(nicknameText)
                     isEdit = false
                     nickname.isClickable = false
                     nickname.isFocusable = false
@@ -168,4 +191,61 @@ class MypageActivity : AppCompatActivity(), View.OnClickListener {
         sangzzi.visibility = visibility
         nyang.visibility = visibility
     }
+
+    // 로그인한 사용자 nickname 가져오기
+    private fun loadNickname() {
+        if (userId != null) {
+            lifecycleScope.launch {
+                val userNickname = DbConn.getNickname(userId)
+                nickname.setText(userNickname ?: "")
+            }
+        }
+    }
+
+    // nickname 업데이트
+    private fun updateNickname(newNickname: String) {
+        if (userId != null) {
+            lifecycleScope.launch {
+                val isUnique = withContext(Dispatchers.IO) {
+                    // 새 닉네임 중복 체크
+                    val conn: Connection? = DbConn.getConnection()
+                    var unique = true
+                    try {
+                        val statement = conn!!.createStatement()
+                        val nicknameCheckSql = "SELECT COUNT(*) FROM users WHERE nickname = '$newNickname'"
+                        val resultSet = statement.executeQuery(nicknameCheckSql)
+                        if (resultSet.next() && resultSet.getInt(1) > 0) {
+                            unique = false // 중복된 닉네임이 있을 경우 false
+                        }
+                        resultSet.close()
+                        statement.close()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        unique = false // 예외 발생 시 중복으로 간주
+                    } finally {
+                        conn?.close()
+                    }
+                    unique
+                }
+
+                if (isUnique) {
+                    // 닉네임이 중복되지 않으면 업데이트 진행
+                    val success = withContext(Dispatchers.IO) {
+                        DbConn.updateNickname(userId, newNickname) // DB 업데이트
+                    }
+                    if (success) {
+                        Toast.makeText(this@MypageActivity, "업데이트되었습니다.", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this@MypageActivity, "실패했습니다.", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    // 중복된 닉네임일 경우 사용자에게 알림
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@MypageActivity, "사용 중인 이름입니다.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
 }

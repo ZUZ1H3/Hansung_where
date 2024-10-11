@@ -66,7 +66,7 @@
     <ImageView
         android:layout_width="316dp"
         android:layout_height="42dp"
-        android:background="@drawable/iv_edit"
+        android:background="@drawable/custom_background"
         android:layout_marginTop="265dp"
         android:layout_marginLeft="22dp"
         app:layout_constraintTop_toTopOf="parent"
@@ -89,7 +89,7 @@
     <ImageView
         android:layout_width="316dp"
         android:layout_height="42dp"
-        android:background="@drawable/iv_edit"
+        android:background="@drawable/custom_background"
         android:layout_marginTop="314dp"
         android:layout_marginLeft="22dp"
         app:layout_constraintTop_toTopOf="parent"
@@ -122,11 +122,16 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent" />
 
-    <ImageView
+    <TextView
         android:id="@+id/login"
         android:layout_width="316dp"
         android:layout_height="50dp"
-        android:background="@drawable/iv_login"
+        android:background="@drawable/custom_button"
+        android:text="로그인"
+        android:textSize="16sp"
+        android:textColor="@color/white"
+        android:fontFamily="@font/neo_bold"
+        android:gravity="center"
         android:layout_marginTop="396dp"
         android:layout_marginLeft="22dp"
         app:layout_constraintTop_toTopOf="parent"

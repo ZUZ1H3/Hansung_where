@@ -6,14 +6,25 @@ import android.net.Uri
 import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import okhttp3.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import java.io.IOException
+import java.sql.Connection
+import java.sql.Statement
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var back: ImageView
-    private lateinit var login: ImageView
+    private lateinit var login: TextView
     private lateinit var explain: TextView
     private lateinit var findIdPw: TextView
     private lateinit var id: EditText
@@ -130,8 +141,10 @@ class LoginActivity : AppCompatActivity() {
 
                         if (!successText.contains("잘못 입력")) { // 잘못 입력된 단어가 없으면 로그인 성공 처리
                             // 로그인 성공
+                            saveUser(userId)
                             Toast.makeText(this@LoginActivity, "로그인 성공", Toast.LENGTH_SHORT).show()
                             editor.putBoolean("isLog", true)
+                            editor.putString("student_id", id.text.toString())
                             editor.apply()
 
                             val intent = Intent(this@LoginActivity, MainActivity::class.java)
@@ -154,5 +167,46 @@ class LoginActivity : AppCompatActivity() {
             data = Uri.parse(url)
         }
         startActivity(intent)
+    }
+
+    private fun saveUser(id: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            var conn: Connection? = DbConn.getConnection()
+
+            try {
+                val statement: Statement = conn!!.createStatement()
+                val checkSql = "SELECT COUNT(*) FROM users WHERE student_id = '$id'"
+                val resultSet = statement.executeQuery(checkSql)
+
+                if (resultSet.next() && resultSet.getInt(1) == 0) {
+                    var nickname: String
+                    var isUnique: Boolean
+
+                    do {
+                        val randomNum = (1..999).random()
+                        nickname = "부기$randomNum"
+
+                        // nickname 중복 체크
+                        val nicknameCheckSql = "SELECT COUNT(*) FROM users WHERE nickname = '$nickname'"
+                        val nicknameResultSet = statement.executeQuery(nicknameCheckSql)
+                        isUnique = nicknameResultSet.next() && nicknameResultSet.getInt(1) == 0
+                        nicknameResultSet.close()
+                    } while (!isUnique)
+                }
+                resultSet.close()
+                statement.close()
+                conn.close()
+
+                withContext(Dispatchers.Main) {
+                    // 메인 스레드에서 UI 업데이트
+                    Toast.makeText(this@LoginActivity, "사용자 정보 저장 완료", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    explain.text = "사용자 정보를 저장할 수 없습니다."
+                }
+            }
+        }
     }
 }

@@ -1,3 +1,18 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+// local.properties 파일에서 값 읽기
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
+
+// local.properties에서 값 가져오기
+val dbUrl: String = localProperties.getProperty("db.url", "")
+val dbUser: String = localProperties.getProperty("db.user", "")
+val dbPassword: String = localProperties.getProperty("db.password", "")
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -15,6 +30,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // 빌드 설정에 DB 정보 추가
+        buildConfigField("String", "DB_URL", "\"${dbUrl}\"")
+        buildConfigField("String", "DB_USER", "\"${dbUser}\"")
+        buildConfigField("String", "DB_PASSWORD", "\"${dbPassword}\"")
     }
 
     buildTypes {
@@ -35,6 +55,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -57,4 +78,9 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
     // Jsoup
     implementation("org.jsoup:jsoup:1.14.3")
+    // MySQL
+    implementation("mysql:mysql-connector-java:5.1.49")
+    // 코루틴 스레드
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
 }
+
