@@ -16,6 +16,7 @@ val dbPassword: String = localProperties.getProperty("db.password", "")
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -82,5 +83,8 @@ dependencies {
     implementation("mysql:mysql-connector-java:5.1.49")
     // 코루틴 스레드
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    //Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
+    implementation("com.google.firebase:firebase-analytics")
 }
 
