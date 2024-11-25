@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'LoginPage.dart';
 import 'package:hansung_where/theme/colors.dart';
 
 import 'mainPages/ChatPage.dart';
@@ -17,12 +18,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false, // DEBUG 제거
       theme: ThemeData(
-        fontFamily: 'Neo-regular',
+        fontFamily: 'Neo',
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
         scaffoldBackgroundColor: ColorStyles.seedColor,
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: LoginPage(),
+      //home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
@@ -62,7 +64,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: null,
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
