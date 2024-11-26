@@ -146,8 +146,9 @@ class _HomePageState extends State<HomePage> {
             });
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => WritePage()),
-            );
+              MaterialPageRoute(
+                builder: (context) => WritePage(type: 'found'), // 'found' 전달
+              ),            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Color(0xFF042D6F),
@@ -173,7 +174,9 @@ class _HomePageState extends State<HomePage> {
             });
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => WritePage()),
+              MaterialPageRoute(
+                builder: (context) => WritePage(type: 'lost'), // 'lost' 전달
+              ),
             );
           },
           style: ElevatedButton.styleFrom(
