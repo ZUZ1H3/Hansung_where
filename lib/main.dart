@@ -6,7 +6,13 @@ import 'mainPages/ChatPage.dart';
 import 'mainPages/HomePage.dart';
 import 'mainPages/MapPage.dart';
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Flutter 엔진 초기화
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform, // Firebase 초기화
+  );
   runApp(const MyApp());
 }
 
