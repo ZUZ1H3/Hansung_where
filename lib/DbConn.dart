@@ -137,4 +137,47 @@ class DbConn {
     }
     return false;
   }
+
+  // 게시물 저장
+  static Future<bool> savePost({
+    required String title,
+    required String body,
+    required int userId,
+    String? imageUrl1,
+    String? imageUrl2,
+    String? imageUrl3,
+    String? imageUrl4,
+    required String type,
+    required String place,
+    required String thing,
+  }) async {
+    final connection = await getConnection();
+    try {
+      // SQL 쿼리 실행
+      final result = await connection.execute(
+        '''
+        INSERT INTO posts (title, body, user_id, image_url1, image_url2, image_url3, image_url4, type, place_keyword, thing_keyword) 
+        VALUES (:title, :body, :userId, :imageUrl1, :imageUrl2, :imageUrl3, :imageUrl4, :type, :place, :thing)
+        ''',
+        {
+          'title': title,
+          'body': body,
+          'userId': userId,
+          'imageUrl1': imageUrl1,
+          'imageUrl2': imageUrl2,
+          'imageUrl3': imageUrl3,
+          'imageUrl4': imageUrl4,
+          'type': type,
+          'place': place,
+          'thing': thing,
+        },
+      );
+
+      // 성공 여부 반환
+      return result.affectedRows > BigInt.zero;
+    } catch (e) {
+      print("Error saving post: $e");
+      return false;
+    }
+  }
 }
