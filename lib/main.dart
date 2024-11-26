@@ -23,8 +23,8 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: ColorStyles.seedColor,
         useMaterial3: true,
       ),
-      home: LoginPage(),
-      //home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      //home: LoginPage(),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
