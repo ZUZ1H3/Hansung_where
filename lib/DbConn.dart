@@ -148,8 +148,8 @@ class DbConn {
     String? imageUrl3,
     String? imageUrl4,
     required String type,
-    required String place,
-    required String thing,
+    required String? place,
+    required String? thing,
   }) async {
     final connection = await getConnection();
     try {
