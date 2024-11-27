@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'LoginPage.dart';
 import 'package:hansung_where/theme/colors.dart';
-
 import 'mainPages/ChatPage.dart';
 import 'mainPages/HomePage.dart';
 import 'mainPages/MapPage.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Flutter 엔진 초기화
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform, // Firebase 초기화
+    options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
