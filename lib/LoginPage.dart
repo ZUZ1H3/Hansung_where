@@ -111,7 +111,7 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    // 뒤로 가기
+                    Navigator.pop(context); // 뒤로 가기
                   },
                   child: const ImageIcon(
                     AssetImage('assets/icons/ic_back.png'),
@@ -126,10 +126,13 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 82),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center, // 중앙 배치
-              children: const [
-                ImageIcon(
-                  AssetImage('assets/icons/ic_pin.png'),
+              mainAxisAlignment: MainAxisAlignment.center, // 중앙 정렬
+              children: [
+                Image.asset(
+                  'assets/icons/ic_pin.png',
+                  width: 20,
+                  height: 32,
+                  fit: BoxFit.contain
                 ),
               ],
             ),
@@ -248,7 +251,11 @@ class _LoginPageState extends State<LoginPage> {
                 backgroundColor: ColorStyles.mainBlue,
                 fixedSize: const Size(316, 48),
               ),
-              child: const Text('로그인'),
+              child:
+              const Text(
+                '로그인',
+                style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),

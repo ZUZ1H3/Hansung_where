@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../screens/MyPage.dart';
 import '../screens/WritePage.dart';
 import '../theme/colors.dart';
 
@@ -47,6 +48,10 @@ class _HomePageState extends State<HomePage> {
                   icon: Image.asset('assets/icons/ic_user.png', height: 20),
                   onPressed: () {
                     print('유저 아이콘 클릭');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => MyPage()),
+                    );
                   },
                 ),
               ],
