@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hansung_where/theme/colors.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:hansung_where/PostUploader.dart';
 
 class WritePage extends StatefulWidget {
   final String type;
@@ -15,6 +16,7 @@ class WritePage extends StatefulWidget {
 class _WritePageState extends State<WritePage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
+  final PostUploader _postUploader = PostUploader();
 
   final List<File?> selectedImages = [null, null, null, null]; // 최대 4개 이미지
 
@@ -44,6 +46,36 @@ class _WritePageState extends State<WritePage> {
     }
   }
 
+  Future<void> uploadImagesToFirebase() async {
+    if (selectedImages.every((image) => image == null)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('업로드할 이미지를 선택해주세요.')),
+      );
+      return;
+    }
+
+    try {
+      List<String> uploadedUrls = [];
+
+      for (int i = 0; i < selectedImages.length; i++) {
+        if (selectedImages[i] != null) {
+          String downloadUrl = await _postUploader.uploadImage(selectedImages[i]!, i + 1);
+          uploadedUrls.add(downloadUrl);
+          print("Uploaded image URL: $downloadUrl"); // 업로드된 URL 출력
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('이미지 업로드 완료: ${uploadedUrls.length}개')),
+      );
+    } catch (e) {
+      print("Error uploading images: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('이미지 업로드 중 오류가 발생했습니다: $e')),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -69,13 +101,10 @@ class _WritePageState extends State<WritePage> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             child: ElevatedButton(
-              onPressed: () {
-                // 저장 버튼
-                print('제목: ${titleController.text}');
-                print('내용: ${contentController.text}');
-                print(
-                    '이미지 개수: ${selectedImages.where((img) => img != null).length}');
+              onPressed: () async {
+                await uploadImagesToFirebase(); // Firebase 이미지 업로드 호출
               },
+
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF042D6F),
                 shape: RoundedRectangleBorder(
