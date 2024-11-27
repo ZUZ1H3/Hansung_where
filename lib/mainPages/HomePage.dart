@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/MyPage.dart';
+import '../screens/NotificationPage.dart';
 import '../screens/WritePage.dart';
+import '../LoginPage.dart';
 import '../theme/colors.dart';
 
 class HomePage extends StatefulWidget {
@@ -10,9 +13,45 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final List<String> tags = ['전체', '원스톱', '학식당', '학술정보관', '상상빌리지', '상상관'];
-
   String selectedTag = '전체';
   bool isPopupVisible = false; // 팝업 표시 여부
+
+  SharedPreferences? prefs; // SharedPreferences를 클래스 변수로 선언
+
+  @override
+  void initState() {
+    super.initState();
+    _initPrefs(); // SharedPreferences 초기화
+  }
+
+  Future<void> _initPrefs() async {
+    prefs = await SharedPreferences.getInstance();
+    setState(() {}); // 초기화 후 상태 갱신
+  }
+
+  // 알림 페이지로 이동
+  Future<void> _moveNotificationPage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isLogIn = prefs.getBool('isLogIn') ?? false; // 로그인 여부
+
+    if(isLogIn) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => NotificationPage()));
+    } else {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+    }
+  }
+
+  // 마이페이지로 이동
+  Future<void> _moveUserPage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isLogIn = prefs.getBool('isLogIn') ?? false; // 로그인 여부
+
+    if(isLogIn) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => MyPage()));
+    } else {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,21 +80,17 @@ class _HomePageState extends State<HomePage> {
                 IconButton(
                   icon: Image.asset('assets/icons/ic_notification.png', height: 20),
                   onPressed: () {
-                    print('알림 아이콘 클릭');
+                    _moveNotificationPage();
                   },
                 ),
                 IconButton(
                   icon: Image.asset('assets/icons/ic_user.png', height: 20),
                   onPressed: () {
-                    print('유저 아이콘 클릭');
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => MyPage()),
-                    );
+                    _moveUserPage();
                   },
                 ),
               ],
-              bottom: TabBar(
+              bottom: const TabBar(
                 labelColor: Colors.black,
                 unselectedLabelColor: Colors.grey,
                 indicatorColor: Color(0xFF042D6F),
@@ -77,9 +112,9 @@ class _HomePageState extends State<HomePage> {
             ),
             body: Column(
               children: [
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 _buildTagSelector(),
-                Expanded(
+                const Expanded(
                   child: TabBarView(
                     children: [
                       Center(child: Text('습득물 페이지')),
@@ -117,13 +152,13 @@ class _HomePageState extends State<HomePage> {
                   });
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF042D6F),
-                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                  backgroundColor: ColorStyles.mainBlue,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: Text(
+                child: const Text(
                   '글쓰기',
                   style: TextStyle(
                     fontFamily: 'Neo',
@@ -156,13 +191,13 @@ class _HomePageState extends State<HomePage> {
               ),            );
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF042D6F),
-            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+            backgroundColor: ColorStyles.mainBlue,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
           ),
-          child: Text(
+          child: const Text(
             '습득물',
             style: TextStyle(
               fontFamily: 'Neo',
@@ -185,13 +220,13 @@ class _HomePageState extends State<HomePage> {
             );
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF042D6F),
-            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+            backgroundColor: ColorStyles.mainBlue,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
           ),
-          child: Text(
+          child: const Text(
             '분실물',
             style: TextStyle(
               fontFamily: 'Neo',
@@ -218,10 +253,10 @@ class _HomePageState extends State<HomePage> {
               });
             },
             child: Container(
-              margin: EdgeInsets.symmetric(horizontal: 4),
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
-                color: isSelected ? Color(0xFF042D6F) : ColorStyles.seedColor,
+                color: isSelected ? ColorStyles.mainBlue : ColorStyles.seedColor,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Text(

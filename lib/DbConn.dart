@@ -106,6 +106,22 @@ class DbConn {
     return false;
   }
 
+  // 닉네임 중복 확인
+  static Future<bool> checkNickname(String nickname) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(
+        'SELECT COUNT(*) AS count FROM users WHERE nickname = :nickname',
+        {'nickname': nickname},
+      );
+      final count = result.rows.first.assoc()['count'];
+      return count == '0'; // 중복된 닉네임이 없으면 true 반환
+    } catch (e) {
+      print("Error checking nickname uniqueness: $e");
+      return false;
+    }
+  }
+
   // 프로필 ID 가져오기
   static Future<int> getProfileId(String studentId) async {
     final connection = await getConnection();
@@ -120,7 +136,7 @@ class DbConn {
     } catch (e) {
       print("Error fetching profile ID: $e");
     }
-    return -1; // 기본값
+    return 1; // 기본값
   }
 
   // 프로필 업데이트

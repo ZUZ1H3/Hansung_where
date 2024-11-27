@@ -16,12 +16,15 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _studentIdController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String infoMessage = "학번/비밀번호로 로그인이 가능합니다.";
-  final String logTag = "Login"; // Logcat 필터 태그
-  bool _isLoginChecked = false; // 체크 상태를 저장하는 변수
+  bool _isLoginChecked = false; // 자동 로그인 체크 상태를 저장
+  SharedPreferences? prefs;
+  bool isLogIn = false;
+  bool autoLogin = false;
 
   @override
   void initState() {
     super.initState();
+    _initPref();
   }
 
   @override
@@ -30,15 +33,30 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController.dispose();
     super.dispose();
   }
+  Future<void> _initPref() async {
+    prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isLogIn = prefs?.getBool('isLogIn') ?? false;
+      autoLogin = prefs?.getBool('autoLogin') ?? false;
+    });
+  }
 
-  Future<void> _login(String studentId, String password) async {
-    final cookieJar = MyCookieJar();
+  Future<void> _login() async {
+    final studentId = _studentIdController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (studentId.isEmpty || password.isEmpty) {
+      setState(() {
+        infoMessage = "아이디와 비밀번호를 입력해 주세요.";
+      });
+      return;
+    }
+
     try {
+      final cookieJar = MyCookieJar();
       final initialResponse = await http.get(Uri.parse("https://learn.hansung.ac.kr/login/index.php"));
       final initialCookies = initialResponse.headers['set-cookie']?.split(', ') ?? [];
       cookieJar.saveFromResponse(Uri.parse("https://learn.hansung.ac.kr"), initialCookies);
-
-      print('Initial cookies: $initialCookies');
 
       final response = await http.post(
         Uri.parse("https://learn.hansung.ac.kr/login/index.php"),
@@ -61,27 +79,24 @@ class _LoginPageState extends State<LoginPage> {
         if (!bodyText.contains("잘못 입력")) { // 성공 조건
           _showToast("로그인 성공!");
 
-          // 로그인 후 받은 쿠키 저장
-          final loginCookies = response.headers['set-cookie']?.split(', ') ?? [];
-          cookieJar.saveFromResponse(Uri.parse("https://learn.hansung.ac.kr"), loginCookies);
-
           // 사용자 정보를 DB에 저장
           await DbConn.saveUser(studentId); // DbConn의 saveUser 호출
+          prefs?.setString('studentId', studentId);
+          prefs?.setBool('isLogIn', true);
 
-          // 자동 로그인 상태 저장 (SharedPreferences 사용 예시)
+          // 자동 로그인 상태 저장
           if (_isLoginChecked) {
-            final prefs = await SharedPreferences.getInstance();
-            prefs.setString('studentId', studentId);
-            prefs.setBool('isLoggedIn', true);
-          }
+            prefs?.setBool('autoLogin', true);
+          } prefs?.setBool('autoLogin', false);
+
+          Navigator.pop(context); // 이전 화면으로 이동
         } else {
           infoMessage = "아이디 또는 비밀번호가 잘못되었습니다.";
         }
       } else { // 서버 응답이 200이 아닌 경우
-        _showToast("서버 오류: ${response.statusCode}");
+        print("서버 오류: ${response.statusCode}");
       }
     } catch (e) { // 네트워크 오류 처리
-      _showToast("서버와 연결할 수 없습니다. 다시 시도해 주세요.");
       print('Error: $e');
     }
   }
@@ -110,14 +125,10 @@ class _LoginPageState extends State<LoginPage> {
             Row(
               children: [
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context); // 뒤로 가기
-                  },
-                  child: const ImageIcon(
-                    AssetImage('assets/icons/ic_back.png'),
-                  ),
+                  onTap: () => Navigator.pop(context),
+                  child: const ImageIcon(AssetImage('assets/icons/ic_back.png')),
                 ),
-                const SizedBox(width: 112),
+                const SizedBox(width: 108),
                 const Text(
                   '로그인',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -125,26 +136,17 @@ class _LoginPageState extends State<LoginPage> {
               ],
             ),
             const SizedBox(height: 82),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center, // 중앙 정렬
-              children: [
-                Image.asset(
-                  'assets/icons/ic_pin.png',
-                  width: 20,
-                  height: 32,
-                  fit: BoxFit.contain
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center, // 중앙 배치
-              children: const [
-                Text(
-                  '찾아부기',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-              ],
+            Center(
+              child: Column(
+                children: [
+                  Image.asset('assets/icons/ic_pin.png', width: 20, height: 32),
+                  const SizedBox(height: 8),
+                  const Text(
+                    '찾아부기',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 57),
             Row(
@@ -152,112 +154,87 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    infoMessage, // 동적으로 설정된 문자열
+                    infoMessage, // infoMessage를 UI에 표시
                     style: const TextStyle(
                       fontSize: 12,
-                      color: ColorStyles.navGrey,
+                      color: ColorStyles.darkGrey,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              width: 316,
-              height: 42,
-              child: TextField(
-                controller: _studentIdController,
-                decoration: InputDecoration(
-                  hintText: '학번 입력',
-                  hintStyle:
-                  TextStyle(fontSize: 14, color: ColorStyles.editGrey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  enabledBorder: OutlineInputBorder(
-                    borderSide:
-                    BorderSide(color: ColorStyles.borderGrey),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide:
-                    BorderSide(color: ColorStyles.mainBlue),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-              ),
-            ),
+            _buildTextField(_studentIdController, '학번 입력'),
             const SizedBox(height: 8),
-            SizedBox(
-              width: 316,
-              height: 42,
-              child: TextField(
-                obscureText: true,
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  hintText: '비밀번호 입력',
-                  hintStyle:
-                  TextStyle(fontSize: 14, color: ColorStyles.editGrey),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+            _buildTextField(_passwordController, '비밀번호 입력', obscureText: true),
+            const SizedBox(height: 13),
+            Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  GestureDetector(
+                    onTap: () => setState(() => _isLoginChecked = !_isLoginChecked),
+                    child: Image.asset(
+                      _isLoginChecked
+                          ? 'assets/icons/ic_checked.png'
+                          : 'assets/icons/ic_unchecked.png',
+                      width: 14,
+                      height: 14,
+                    ),
                   ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  enabledBorder: OutlineInputBorder(
-                    borderSide:
-                    BorderSide(color: ColorStyles.borderGrey),
-                    borderRadius: BorderRadius.circular(8.0),
+                  const SizedBox(width: 6),
+                  const Text(
+                    '자동 로그인',
+                    style: TextStyle(fontSize: 12, color: ColorStyles.darkGrey),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide:
-                    BorderSide(color: ColorStyles.mainBlue),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Checkbox(
-                  value: _isLoginChecked,
-                  onChanged: (bool? newValue) {
-                    setState(() {
-                      _isLoginChecked = newValue ?? false;
-                    });
-                  },
-                ),
-                const Text(
-                  '자동 로그인',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 14),
             ElevatedButton(
-              onPressed: () {
-                final studentId = _studentIdController.text;
-                final password = _passwordController.text;
-                if (studentId.isEmpty || password.isEmpty) {
-                  _showToast("아이디와 비밀번호를 입력해 주세요.");
-                } else {
-                  _login(studentId, password);
-                }
-              },
+              onPressed: _login, // _login 함수 호출
               style: ElevatedButton.styleFrom(
                 backgroundColor: ColorStyles.mainBlue,
                 fixedSize: const Size(316, 48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              child:
-              const Text(
+              child: const Text(
                 '로그인',
                 style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String hintText, {bool obscureText = false}) {
+    return SizedBox(
+      width: 316,
+      height: 42,
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(fontSize: 14, color: ColorStyles.editGrey),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          enabledBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: ColorStyles.borderGrey),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: ColorStyles.mainBlue),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
         ),
       ),
     );
