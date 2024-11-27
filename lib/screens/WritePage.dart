@@ -3,6 +3,8 @@ import 'package:hansung_where/theme/colors.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:hansung_where/PostUploader.dart';
+import 'package:hansung_where/DbConn.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WritePage extends StatefulWidget {
   final String type;
@@ -19,6 +21,12 @@ class _WritePageState extends State<WritePage> {
   final PostUploader _postUploader = PostUploader();
 
   final List<File?> selectedImages = [null, null, null, null]; // 최대 4개 이미지
+
+  Future<int> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final studentId = prefs.getString('studentId');
+    return int.tryParse(studentId ?? '') ?? 2211062; // 문자열을 정수로 변환, 실패 시 0 반환
+  }
 
   Future<void> _pickImage() async {
     if (selectedImages.where((img) => img != null).length >= 4) {
@@ -102,8 +110,55 @@ class _WritePageState extends State<WritePage> {
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             child: ElevatedButton(
               onPressed: () async {
-                await uploadImagesToFirebase(); // Firebase 이미지 업로드 호출
+                if (titleController.text.isEmpty || contentController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('제목과 내용을 입력해주세요.')),
+                  );
+                  return;
+                }
+
+                // 선택된 이미지 파일만 필터링
+                List<File> imageFiles = selectedImages.whereType<File>().toList();
+
+                try {
+                  int userId = await getUserId();
+                  // Firebase Storage 업로드
+                  List<String> uploadedUrls = [];
+                  for (int i = 0; i < imageFiles.length; i++) {
+                    String downloadUrl = await _postUploader.uploadImage(imageFiles[i], i + 1);
+                    uploadedUrls.add(downloadUrl);
+                  }
+
+                  // MySQL에 게시글 저장
+                  bool isSuccess = await DbConn.savePost(
+                    title: titleController.text,
+                    body: contentController.text,
+                    userId: userId, // 사용자 ID
+                    imageUrl1: uploadedUrls.isNotEmpty ? uploadedUrls[0] : null,
+                    imageUrl2: uploadedUrls.length > 1 ? uploadedUrls[1] : null,
+                    imageUrl3: uploadedUrls.length > 2 ? uploadedUrls[2] : null,
+                    imageUrl4: uploadedUrls.length > 3 ? uploadedUrls[3] : null,
+                    type: widget.type, // WritePage에서 전달받은 type 값
+                    place: '서울', // 장소 키워드
+                    thing: '지갑', // 물건 키워드
+                  );
+
+                  if (isSuccess) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('게시물이 저장되었습니다.')),
+                    );
+                    Navigator.pop(context); // 메인 화면으로 돌아가기
+                  } else {
+                    throw Exception("게시물 저장 실패");
+                  }
+                } catch (e) {
+                  print("Error: $e");
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('오류 발생: $e')),
+                  );
+                }
               },
+
 
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF042D6F),
