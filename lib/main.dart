@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'LoginPage.dart';
 import 'package:hansung_where/theme/colors.dart';
 import 'mainPages/ChatPage.dart';
 import 'mainPages/HomePage.dart';
