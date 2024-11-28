@@ -5,6 +5,9 @@ import '../screens/NotificationPage.dart';
 import '../screens/WritePage.dart';
 import '../LoginPage.dart';
 import '../theme/colors.dart';
+import '../PostCard.dart';
+import '../Post.dart';
+import '../DbConn.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -15,7 +18,6 @@ class _HomePageState extends State<HomePage> {
   final List<String> tags = ['전체', '원스톱', '학식당', '학술정보관', '상상빌리지', '상상관'];
   String selectedTag = '전체';
   bool isPopupVisible = false; // 팝업 표시 여부
-
   SharedPreferences? prefs; // SharedPreferences를 클래스 변수로 선언
 
   @override
@@ -29,28 +31,143 @@ class _HomePageState extends State<HomePage> {
     setState(() {}); // 초기화 후 상태 갱신
   }
 
-  // 알림 페이지로 이동
-  Future<void> _moveNotificationPage() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLogIn = prefs.getBool('isLogIn') ?? false; // 로그인 여부
+  Future<void> _movePage(String pageType) async {
+    if (prefs == null) return; // prefs 초기화 확인
+    final isLogIn = prefs!.getBool('isLogIn') ?? false;
 
-    if(isLogIn) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => NotificationPage()));
+    if (isLogIn) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => pageType == 'notification' ? NotificationPage() : MyPage(),
+        ),
+      );
     } else {
       Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
     }
   }
 
-  // 마이페이지로 이동
-  Future<void> _moveUserPage() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLogIn = prefs.getBool('isLogIn') ?? false; // 로그인 여부
+  Widget _buildPostList(String type) {
+    return FutureBuilder<List<Post>>(
+      future: DbConn.fetchPosts(type: type),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('게시물이 없습니다.'));
+        } else {
+          List<Post> posts = snapshot.data!;
 
-    if(isLogIn) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => MyPage()));
-    } else {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
-    }
+          // 선택된 태그에 따라 게시글 필터링
+          if (selectedTag != '전체') {
+            posts = posts.where((post) => post.place == selectedTag).toList();
+          }
+
+          if (posts.isEmpty) {
+            return const Center(child: Text('해당 장소의 게시물이 없습니다.'));
+          }
+
+          return ListView.builder(
+            itemCount: posts.length,
+            itemBuilder: (context, index) {
+              return PostCard(post: posts[index]);
+            },
+          );
+        }
+      },
+    );
+  }
+
+
+  Widget _buildTabBarView(List<String> types) {
+    return TabBarView(
+      children: types.map((type) => _buildPostList(type)).toList(),
+    );
+  }
+
+  Widget _buildTag(String tag, bool isSelected) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedTag = tag;
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? ColorStyles.mainBlue : ColorStyles.seedColor,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Text(
+          tag,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  Widget _buildTagSelector() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: tags.map((tag) => _buildTag(tag, selectedTag == tag)).toList(),
+      ),
+    );
+  }
+
+  Widget _buildPopupButton(String text, VoidCallback onPressed) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: ColorStyles.mainBlue,
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontFamily: 'Neo',
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          fontSize: 13,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPopupButtons() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildPopupButton('습득물', () {
+          setState(() {
+            isPopupVisible = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => WritePage(type: 'found')),
+          );
+        }),
+        _buildPopupButton('분실물', () {
+          setState(() {
+            isPopupVisible = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => WritePage(type: 'lost')),
+          );
+        }),
+      ],
+    );
   }
 
   @override
@@ -80,13 +197,13 @@ class _HomePageState extends State<HomePage> {
                 IconButton(
                   icon: Image.asset('assets/icons/ic_notification.png', height: 20),
                   onPressed: () {
-                    _moveNotificationPage();
+                    _movePage('notification');
                   },
                 ),
                 IconButton(
                   icon: Image.asset('assets/icons/ic_user.png', height: 20),
                   onPressed: () {
-                    _moveUserPage();
+                    _movePage('user');
                   },
                 ),
               ],
@@ -114,14 +231,13 @@ class _HomePageState extends State<HomePage> {
               children: [
                 const SizedBox(height: 10),
                 _buildTagSelector(),
-                const Expanded(
+                Expanded(
                   child: TabBarView(
                     children: [
-                      Center(child: Text('습득물 페이지')),
-                      Center(child: Text('분실물 페이지')),
+                      _buildPostList('found'), // 습득물
+                      _buildPostList('lost'),  // 분실물
                     ],
-                  ),
-                ),
+                  ),                ),
               ],
             ),
           ),
@@ -144,11 +260,11 @@ class _HomePageState extends State<HomePage> {
             right: 0,
             child: Center(
               child: isPopupVisible
-                  ? _buildPopupButtons() // 팝업 버튼 표시
+                  ? _buildPopupButtons()
                   : ElevatedButton(
                 onPressed: () {
                   setState(() {
-                    isPopupVisible = true; // 팝업 활성화
+                    isPopupVisible = true;
                   });
                 },
                 style: ElevatedButton.styleFrom(
@@ -171,104 +287,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPopupButtons() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ElevatedButton(
-          onPressed: () {
-            setState(() {
-              isPopupVisible = false; // 팝업 닫기
-            });
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => WritePage(type: 'found'), // 'found' 전달
-              ),            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: ColorStyles.mainBlue,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          child: const Text(
-            '습득물',
-            style: TextStyle(
-              fontFamily: 'Neo',
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              fontSize: 13,
-            ),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            setState(() {
-              isPopupVisible = false; // 팝업 닫기
-            });
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => WritePage(type: 'lost'), // 'lost' 전달
-              ),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: ColorStyles.mainBlue,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          child: const Text(
-            '분실물',
-            style: TextStyle(
-              fontFamily: 'Neo',
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              fontSize: 13,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTagSelector() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: tags.map((tag) {
-          final bool isSelected = selectedTag == tag;
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                selectedTag = tag;
-              });
-            },
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? ColorStyles.mainBlue : ColorStyles.seedColor,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Text(
-                tag,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.black,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }

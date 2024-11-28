@@ -3,7 +3,6 @@ import 'package:hansung_where/theme/colors.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:hansung_where/PostUploader.dart';
-import 'package:hansung_where/DbConn.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WritePage extends StatefulWidget {
@@ -18,13 +17,94 @@ class WritePage extends StatefulWidget {
 class _WritePageState extends State<WritePage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
-  final PostUploader _postUploader = PostUploader();
+  final PostUploader _postUploader = PostUploader(); // PostUploader 인스턴스 생성
 
   final List<File?> selectedImages = [null, null, null, null]; // 최대 4개 이미지
-
   String selectedPlace = "#장소"; // 초기 장소 값
-  String selectedKeyword = "#물건"; // 선택된 물건 키워드 값 (초기값 null)
+  String selectedKeyword = "#물건"; // 초기 키워드 값
 
+  Future<int> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final studentId = prefs.getString('studentId');
+    return int.tryParse(studentId ?? '') ?? 2211062; // 기본값 설정
+  }
+
+  /// 이미지 선택
+  Future<void> _pickImage() async {
+    if (selectedImages.where((img) => img != null).length >= 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("최대 4개까지 추가할 수 있습니다.")),
+      );
+      return;
+    }
+
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      setState(() {
+        for (int i = 0; i < selectedImages.length; i++) {
+          if (selectedImages[i] == null) {
+            selectedImages[i] = File(image.path);
+            break;
+          }
+        }
+      });
+    }
+  }
+
+  /// 이미지 제거
+  void _removeImage(int index) {
+    setState(() {
+      selectedImages[index] = null;
+    });
+  }
+
+  /// 게시물 업로드
+  Future<void> _uploadPost() async {
+    if (titleController.text.isEmpty || contentController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('제목과 내용을 입력해주세요.')),
+      );
+      return;
+    } else if (contentController.text.length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('내용을 최소 10자 이상 작성해주세요.')),
+      );
+      return;
+    } else if (selectedPlace == "#장소" || selectedKeyword == "#물건") {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('장소와 물건 태그를 모두 선택해주세요.')),
+      );
+      return;
+    }
+
+    try {
+      int userId = await getUserId();
+
+      // 선택된 이미지에서 null 제거
+      List<File> imageFiles = selectedImages.whereType<File>().toList();
+
+      // PostUploader를 사용하여 게시물 업로드
+      await _postUploader.uploadImagesAndSavePost(
+        title: titleController.text,
+        body: contentController.text,
+        userId: userId,
+        imageFiles: imageFiles,
+        type: widget.type,
+        place: selectedPlace,
+        thing: selectedKeyword,
+        context: context,
+      );
+    } catch (e) {
+      print("Error uploading post: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('게시물 업로드 중 오류가 발생했습니다: $e')),
+      );
+    }
+  }
+
+  /// 장소 선택 다이얼로그
   void _showPlaceDialog() async {
     List<String> places = [
       "원스톱", "학식당", "학술정보관", "상상빌리지",
@@ -36,8 +116,8 @@ class _WritePageState extends State<WritePage> {
     String? result = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
-        String? tempSelectedPlace = selectedPlace; // 다이얼로그 내부 로컬 상태
-        return StatefulBuilder( // 다이얼로그 내부 상태 관리
+        String? tempSelectedPlace = selectedPlace;
+        return StatefulBuilder(
           builder: (context, setState) {
             return Dialog(
               backgroundColor: Colors.white,
@@ -316,69 +396,6 @@ class _WritePageState extends State<WritePage> {
 
 
 
-  Future<int> getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    final studentId = prefs.getString('studentId');
-    return int.tryParse(studentId ?? '') ?? 2211062; // 문자열을 정수로 변환, 실패 시 0 반환
-  }
-
-  Future<void> _pickImage() async {
-    if (selectedImages.where((img) => img != null).length >= 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("최대 4개까지 추가할 수 있습니다."),
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-
-    if (image != null) {
-      setState(() {
-        for (int i = 0; i < selectedImages.length; i++) {
-          if (selectedImages[i] == null) {
-            selectedImages[i] = File(image.path);
-            break;
-          }
-        }
-      });
-    }
-  }
-
-  Future<void> uploadImagesToFirebase() async {
-    if (selectedImages.every((image) => image == null)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('업로드할 이미지를 선택해주세요.')),
-      );
-      return;
-    }
-
-    try {
-      List<String> uploadedUrls = [];
-
-      for (int i = 0; i < selectedImages.length; i++) {
-        if (selectedImages[i] != null) {
-          String downloadUrl = await _postUploader.uploadImage(selectedImages[i]!, i + 1);
-          uploadedUrls.add(downloadUrl);
-          print("Uploaded image URL: $downloadUrl"); // 업로드된 URL 출력
-        }
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('이미지 업로드 완료: ${uploadedUrls.length}개')),
-      );
-    } catch (e) {
-      print("Error uploading images: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('이미지 업로드 중 오류가 발생했습니다: $e')),
-      );
-    }
-  }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -403,76 +420,7 @@ class _WritePageState extends State<WritePage> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             child: ElevatedButton(
-              onPressed: () async {
-                if (titleController.text.isEmpty ||
-                    contentController.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('제목과 내용을 입력해주세요.')),
-                  );
-                  return;
-                }
-                // 내용이 10자 이상인지 확인
-                else if (contentController.text.length < 10) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('내용을 최소 10자 이상 작성해주세요.')),
-                  );
-                  return;
-                }
-                // 장소 또는 물건 선택 여부 확인
-                else if ((selectedPlace == "#장소") && (selectedKeyword == "#물건")) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('장소 또는 물건 태그를 하나 이상 선택해주세요.')),
-                  );
-                  return;
-                }
-
-                List<File> imageFiles = selectedImages.whereType<File>()
-                    .toList();
-
-                try {
-                  int userId = await getUserId();
-
-                  // Firebase Storage 업로드
-                  List<String> uploadedUrls = [];
-                  for (int i = 0; i < imageFiles.length; i++) {
-                    String downloadUrl = await _postUploader.uploadImage(
-                        imageFiles[i], i + 1);
-                    uploadedUrls.add(downloadUrl);
-                  }
-
-                  // MySQL에 게시글 저장
-                  bool isSuccess = await DbConn.savePost(
-                    title: titleController.text,
-                    body: contentController.text,
-                    userId: userId,
-                    // 사용자 ID
-                    imageUrl1: uploadedUrls.isNotEmpty ? uploadedUrls[0] : null,
-                    imageUrl2: uploadedUrls.length > 1 ? uploadedUrls[1] : null,
-                    imageUrl3: uploadedUrls.length > 2 ? uploadedUrls[2] : null,
-                    imageUrl4: uploadedUrls.length > 3 ? uploadedUrls[3] : null,
-                    type: widget.type,
-                    // WritePage에서 전달받은 type 값
-                    place: selectedPlace == "#장소" ? null : selectedPlace,
-                    thing: selectedKeyword == "#물건" ? null : selectedKeyword,
-                  );
-
-                  if (isSuccess) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('게시물이 저장되었습니다.')),
-                    );
-                    Navigator.pop(context); // 메인 화면으로 돌아가기
-                  } else {
-                    throw Exception("게시물 저장 실패");
-                  }
-                } catch (e) {
-                  print("Error: $e");
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('오류 발생: $e')),
-                  );
-                }
-              },
-
-
+              onPressed: _uploadPost,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(0xFF042D6F),
                 shape: RoundedRectangleBorder(
@@ -498,7 +446,7 @@ class _WritePageState extends State<WritePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 제목과 내용 입력 필드
+            // 제목 및 내용 입력 필드
             Container(
               color: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -513,9 +461,10 @@ class _WritePageState extends State<WritePage> {
                       border: InputBorder.none,
                     ),
                     style: TextStyle(
-                        fontSize: 16,
-                        fontFamily: 'Neo',
-                        fontWeight: FontWeight.bold),
+                      fontSize: 16,
+                      fontFamily: 'Neo',
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Divider(
                     color: Colors.grey.shade300,
@@ -525,12 +474,7 @@ class _WritePageState extends State<WritePage> {
                     controller: contentController,
                     maxLines: 16,
                     decoration: InputDecoration(
-                      hintText: '내용을 최소 10글자 이상 작성하세요. \n\n찾아부기는 누구나 기분 좋게 참여할 수 있는 커뮤니티를 만들기 위해 이용 규칙을 제정하여 운영하고 있습니다. 위반 시 게시물이 삭제되며 서비스 이용이 일정 기간 제한될 수 있습니다.\n\n'
-                          '  • 타인의 권리를 침해하거나 불쾌감을 주는 행위\n'
-                          '  • 범죄, 불법 행위 등 법령 위반하는 행위\n'
-                          '  • 욕설, 비하, 차별, 혐오, 폭력 관련 내용을 포함한 게시글을 작성하는 행위\n'
-                          '  •  음란물, 성적 수치심을 유발하는 행위\n'
-                          '  • 스포일러, 공포, 속임, 놀라게 하는 행위',
+                      hintText: '내용을 최소 10글자 이상 작성하세요.',
                       hintStyle: TextStyle(color: Colors.grey, fontSize: 12),
                       border: InputBorder.none,
                     ),
@@ -541,100 +485,99 @@ class _WritePageState extends State<WritePage> {
             ),
             SizedBox(height: 10),
 
-// 이미지 추가 버튼과 슬롯
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 키워드, 이미지 개수, 카메라 버튼을 나란히 배치
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween, // 좌우 간격 조정
-                  children: [
-                    // 키워드와 태그
-                    Row(
-                      children: [
-                        Text(
-                          "키워드",
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Neo'),
-                        ),
-                        SizedBox(width: 10), // 키워드와 태그 간격
+    Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+    // 키워드, 이미지 개수, 카메라 버튼을 나란히 배치
+    Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween, // 좌우 간격 조정
+    children: [
+    // 키워드와 태그
+    Row(
+    children: [
+    Text(
+    "키워드",
+    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Neo'),
+    ),
+    SizedBox(width: 10), // 키워드와 태그 간격
 
-                        GestureDetector(
-                          onTap: _showPlaceDialog,
-                          child:Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.grey),
-                          ),
-                          child: Text(
-                              selectedPlace,
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ),
-                        ),
-                        SizedBox(width: 8), // 태그 간격
-                        GestureDetector(
-                          onTap: _showKeywordDialog, // 물건 태그 클릭 시 실행
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.grey),
-                            ),
-                            child: Text(
-                              selectedKeyword,
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+    GestureDetector(
+    onTap: _showPlaceDialog,
+    child:Container(
+    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(20),
+    border: Border.all(color: Colors.grey),
+    ),
+    child: Text(
+    selectedPlace,
+    style: TextStyle(fontSize: 12, color: Colors.grey),
+    ),
+    ),
+    ),
+    SizedBox(width: 8), // 태그 간격
+    GestureDetector(
+    onTap: _showKeywordDialog, // 물건 태그 클릭 시 실행
+    child: Container(
+    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(20),
+    border: Border.all(color: Colors.grey),
+    ),
+    child: Text(
+    selectedKeyword,
+    style: TextStyle(fontSize: 12, color: Colors.grey),
+    ),
+    ),
+    ),
+    ],
+    ),
 
-                    // 이미지 개수와 카메라 버튼
-                    Row(
-                      children: [
-                        Text(
-                          "( ${selectedImages.where((img) => img != null).length} / 4 )",
-                          style: TextStyle(fontSize: 11, fontFamily: 'Neo'),
-                        ),
-                        SizedBox(width: 2), // 텍스트와 카메라 버튼 간격
-                        IconButton(
-                          icon: Image.asset('assets/icons/ic_camera.png', height: 24),
-                          onPressed: _pickImage,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+    // 이미지 개수와 카메라 버튼
+    Row(
+    children: [
+    Text(
+    "( ${selectedImages.where((img) => img != null).length} / 4 )",
+    style: TextStyle(fontSize: 11, fontFamily: 'Neo'),
+    ),
+    SizedBox(width: 2), // 텍스트와 카메라 버튼 간격
+    IconButton(
+    icon: Image.asset('assets/icons/ic_camera.png', height: 24),
+    onPressed: _pickImage,
+    ),
+    ],
+    ),
+    ],
+    ),
 
-                SizedBox(height: 10), // 상단 Row와 이미지 슬롯 사이 간격
+    SizedBox(height: 10), // 상단 Row와 이미지 슬롯 사이 간격
 
-                // 이미지 슬롯들
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(
-                    4,
-                        (index) => Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        color: Colors.white, // 슬롯 배경을 흰색으로 설정
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(8),
-                        image: selectedImages[index] != null
-                            ? DecorationImage(
-                          image: FileImage(selectedImages[index]!),
-                          fit: BoxFit.cover,
-                        )
-                            : null,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+    // 이미지 슬롯들
+    Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: List.generate(
+    4,
+    (index) => Container(
+    width: 76,
+    height: 76,
+    decoration: BoxDecoration(
+    color: Colors.white, // 슬롯 배경을 흰색으로 설정
+    border: Border.all(color: Colors.grey),
+    borderRadius: BorderRadius.circular(8),
+    image: selectedImages[index] != null
+    ? DecorationImage(
+    image: FileImage(selectedImages[index]!),
+    fit: BoxFit.cover,
+    )
+        : null,
+    ),
+    ),
+    ),
+    ),
+    ],
+    ),
 
           ],
         ),

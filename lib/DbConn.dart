@@ -1,5 +1,6 @@
 import 'package:mysql_client/mysql_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'Post.dart'; // Post 모델 임포트
 
 class DbConn {
   static MySQLConnection? _connection;
@@ -154,6 +155,7 @@ class DbConn {
     return false;
   }
 
+
   // 게시물 저장
   static Future<bool> savePost({
     required String title,
@@ -194,6 +196,82 @@ class DbConn {
     } catch (e) {
       print("Error saving post: $e");
       return false;
+    }
+  }
+
+  static Future<List<Post>> fetchPosts({
+    required String type,
+    String? placeKeyword,
+    String? thingKeyword,
+  }) async {
+    final connection = await getConnection(); // 연결 유지
+    List<Post> posts = [];
+
+    try {
+      String sql = '''
+    SELECT 
+      title, 
+      body, 
+      created_at, 
+      image_url1, 
+      place_keyword, 
+      thing_keyword 
+    FROM 
+      posts 
+    WHERE 
+      type = :type
+    ''';
+
+      if (placeKeyword != null) {
+        sql += " AND place_keyword = :placeKeyword";
+      }
+      if (thingKeyword != null) {
+        sql += " AND thing_keyword = :thingKeyword";
+      }
+
+      sql += " ORDER BY created_at DESC";
+
+      final results = await connection.execute(sql, {
+        'type': type,
+        if (placeKeyword != null) 'placeKeyword': placeKeyword,
+        if (thingKeyword != null) 'thingKeyword': thingKeyword,
+      });
+
+      for (final row in results.rows) {
+        final rawCreatedAt = row.assoc()['created_at'];
+        final relativeTime = _calculateRelativeTime(rawCreatedAt);
+
+        posts.add(Post(
+          title: row.assoc()['title'] ?? '',
+          body: row.assoc()['body'] ?? '',
+          createdAt: relativeTime, // 상대적 시간으로 변환된 값 사용
+          imageUrl1: row.assoc()['image_url1'],
+          place: row.assoc()['place_keyword'],
+          thing: row.assoc()['thing_keyword'],
+        ));
+      }
+    } catch (e) {
+      print('Error fetching posts: $e');
+    }
+
+    return posts; // 연결을 닫지 않고 재사용
+  }
+
+
+  static String _calculateRelativeTime(String? createdAt) {
+    if (createdAt == null) return '';
+    final createdAtDate = DateTime.parse(createdAt);
+    final now = DateTime.now();
+    final difference = now.difference(createdAtDate);
+
+    if (difference.inMinutes < 1) {
+      return '방금 전';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}분 전';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}시간 전';
+    } else {
+      return '${difference.inDays}일 전';
     }
   }
 }

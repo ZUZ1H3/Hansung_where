@@ -1,33 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:hansung_where/Firebase.dart'; // FirebaseHelper 임포트
 import 'DbConn.dart';
 
 class PostUploader {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-
-
-  /// 이미지 업로드
-  Future<String> uploadImage(File imageFile, int index) async {
-    try {
-      final String timestamp = DateTime.now().toIso8601String();
-      final String fileName = "images/${timestamp}_$index.jpg";
-      print("Uploading to path: $fileName"); // 경로 출력
-
-      // Firebase Storage 참조 생성 및 업로드
-      final Reference storageRef = _storage.ref().child(fileName);
-      final UploadTask uploadTask = storageRef.putFile(imageFile);
-
-      final TaskSnapshot snapshot = await uploadTask;
-      final String downloadUrl = await snapshot.ref.getDownloadURL();
-      print("Image uploaded: $downloadUrl"); // 업로드된 URL 확인
-
-      return downloadUrl; // 업로드 성공 시 다운로드 URL 반환
-    } catch (e) {
-      print("Image upload error: $e");
-      throw Exception("Image upload failed: $e");
-    }
-  }
+  final Firebase _firebaseHelper = Firebase(); // FirebaseHelper 인스턴스 생성
 
   /// 이미지 업로드 및 게시물 저장
   Future<void> uploadImagesAndSavePost({
@@ -42,9 +19,9 @@ class PostUploader {
   }) async {
     List<Future<String>> uploadTasks = [];
 
-    // Firebase Storage에 이미지 업로드 작업 생성
+    // FirebaseHelper를 사용하여 이미지 업로드 작업 생성
     for (int i = 0; i < imageFiles.length; i++) {
-      uploadTasks.add(uploadImage(imageFiles[i], i + 1));
+      uploadTasks.add(_firebaseHelper.uploadImage(imageFiles[i], i + 1));
     }
 
     try {
