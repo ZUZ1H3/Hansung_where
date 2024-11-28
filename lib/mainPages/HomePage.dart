@@ -15,7 +15,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<String> tags = ['전체', '원스톱', '학식당', '학술정보관', '상상빌리지', '상상관'];
+  final List<String> tags = ['전체', '원스톱', '학식당', '학술정보관', '상상빌리지', '상상파크'];
   String selectedTag = '전체';
   bool isPopupVisible = false; // 팝업 표시 여부
   SharedPreferences? prefs; // SharedPreferences를 클래스 변수로 선언

@@ -199,6 +199,25 @@ class DbConn {
     }
   }
 
+  //장소 별 found 게시물 수를 가져옴(지도에서 사용)
+  static Future<int> getFoundPostCount(String placeKeyword) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(
+        '''
+        SELECT COUNT(*) AS count 
+        FROM posts 
+        WHERE type = 'found' AND place_keyword = :placeKeyword
+        ''',
+        {'placeKeyword': placeKeyword},
+      );
+      return int.parse(result.rows.first.assoc()['count'] ?? '0');
+    } catch (e) {
+      print("Error fetching found post count: $e");
+      return 0;
+    }
+  }
+  //게시물 저장
   static Future<List<Post>> fetchPosts({
     required String type,
     String? placeKeyword,
