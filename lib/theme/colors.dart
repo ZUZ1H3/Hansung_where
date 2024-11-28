@@ -6,5 +6,5 @@ class ColorStyles {
   static const navGrey = Color(0xFF939393);
   static const darkGrey = Color(0xFF767676);
   static const editGrey = Color(0xFFA7A7A7);
-  static const borderGrey = Color(0xFFDCDCDC);
+  static const borderGrey = Color(0xFFEDEDED);
 }
