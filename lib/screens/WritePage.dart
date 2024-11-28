@@ -107,10 +107,27 @@ class _WritePageState extends State<WritePage> {
   /// 장소 선택 다이얼로그
   void _showPlaceDialog() async {
     List<String> places = [
-      "원스톱", "학식당", "학술정보관", "상상빌리지",
-      "상상파크", "상파플", "상상관", "미래관", "공학관", "우촌관",
-      "탐구관", "인성관", "창의관", "낙산관", "진리관", "ROTC",
-      "학송관", "연구관", "지선관", "체육관", "기타"
+      "원스톱",
+      "학식당",
+      "학술정보관",
+      "상상빌리지",
+      "상상파크",
+      "상파플",
+      "상상관",
+      "미래관",
+      "공학관",
+      "우촌관",
+      "탐구관",
+      "인성관",
+      "창의관",
+      "낙산관",
+      "진리관",
+      "ROTC",
+      "학송관",
+      "연구관",
+      "지선관",
+      "체육관",
+      "기타"
     ];
 
     String? result = await showDialog<String>(
@@ -297,15 +314,18 @@ class _WritePageState extends State<WritePage> {
                       ),
                       itemCount: keywords.length,
                       itemBuilder: (context, index) {
-                        bool isSelected = selectedKeyword == keywords[index]['label'];
+                        bool isSelected =
+                            selectedKeyword == keywords[index]['label'];
                         return GestureDetector(
                           onTap: () {
                             setState(() {
-                              selectedKeyword = keywords[index]['label']; // 선택 상태 업데이트
+                              selectedKeyword =
+                                  keywords[index]['label']; // 선택 상태 업데이트
                             });
                           },
                           child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 10),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
@@ -315,7 +335,8 @@ class _WritePageState extends State<WritePage> {
                                 Image.asset(
                                   isSelected
                                       ? 'assets/icons/${keywords[index]['assetName']}_selected.png' // 선택된 상태
-                                      : 'assets/icons/${keywords[index]['assetName']}.png', // 기본 상태
+                                      : 'assets/icons/${keywords[index]['assetName']}.png',
+                                  // 기본 상태
                                   width: 40, // 이미지 크기
                                   height: 40,
                                 ),
@@ -324,8 +345,12 @@ class _WritePageState extends State<WritePage> {
                                   keywords[index]['label'],
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: isSelected ? Color(0xFF042D6F) : Colors.black,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected
+                                        ? Color(0xFF042D6F)
+                                        : Colors.black,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                                     fontFamily: 'Neo',
                                   ),
                                 ),
@@ -393,8 +418,6 @@ class _WritePageState extends State<WritePage> {
       });
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -485,100 +508,107 @@ class _WritePageState extends State<WritePage> {
             ),
             SizedBox(height: 10),
 
-    Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-    // 키워드, 이미지 개수, 카메라 버튼을 나란히 배치
-    Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween, // 좌우 간격 조정
-    children: [
-    // 키워드와 태그
-    Row(
-    children: [
-    Text(
-    "키워드",
-    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Neo'),
-    ),
-    SizedBox(width: 10), // 키워드와 태그 간격
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 키워드, 이미지 개수, 카메라 버튼을 나란히 배치
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween, // 좌우 간격 조정
+                  children: [
+                    // 키워드와 태그
+                    Row(
+                      children: [
+                        Text(
+                          "키워드",
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Neo'),
+                        ),
+                        SizedBox(width: 10), // 키워드와 태그 간격
 
-    GestureDetector(
-    onTap: _showPlaceDialog,
-    child:Container(
-    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(20),
-    border: Border.all(color: Colors.grey),
-    ),
-    child: Text(
-    selectedPlace,
-    style: TextStyle(fontSize: 12, color: Colors.grey),
-    ),
-    ),
-    ),
-    SizedBox(width: 8), // 태그 간격
-    GestureDetector(
-    onTap: _showKeywordDialog, // 물건 태그 클릭 시 실행
-    child: Container(
-    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(20),
-    border: Border.all(color: Colors.grey),
-    ),
-    child: Text(
-    selectedKeyword,
-    style: TextStyle(fontSize: 12, color: Colors.grey),
-    ),
-    ),
-    ),
-    ],
-    ),
+                        GestureDetector(
+                          onTap: _showPlaceDialog,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.grey),
+                            ),
+                            child: Text(
+                              selectedPlace,
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8), // 태그 간격
+                        GestureDetector(
+                          onTap: _showKeywordDialog, // 물건 태그 클릭 시 실행
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.grey),
+                            ),
+                            child: Text(
+                              selectedKeyword,
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
 
-    // 이미지 개수와 카메라 버튼
-    Row(
-    children: [
-    Text(
-    "( ${selectedImages.where((img) => img != null).length} / 4 )",
-    style: TextStyle(fontSize: 11, fontFamily: 'Neo'),
-    ),
-    SizedBox(width: 2), // 텍스트와 카메라 버튼 간격
-    IconButton(
-    icon: Image.asset('assets/icons/ic_camera.png', height: 24),
-    onPressed: _pickImage,
-    ),
-    ],
-    ),
-    ],
-    ),
+                    // 이미지 개수와 카메라 버튼
+                    Row(
+                      children: [
+                        Text(
+                          "( ${selectedImages.where((img) => img != null).length} / 4 )",
+                          style: TextStyle(fontSize: 11, fontFamily: 'Neo'),
+                        ),
+                        SizedBox(width: 2), // 텍스트와 카메라 버튼 간격
+                        IconButton(
+                          icon: Image.asset('assets/icons/ic_camera.png',
+                              height: 24),
+                          onPressed: _pickImage,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
 
-    SizedBox(height: 10), // 상단 Row와 이미지 슬롯 사이 간격
+                SizedBox(height: 10), // 상단 Row와 이미지 슬롯 사이 간격
 
-    // 이미지 슬롯들
-    Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: List.generate(
-    4,
-    (index) => Container(
-    width: 76,
-    height: 76,
-    decoration: BoxDecoration(
-    color: Colors.white, // 슬롯 배경을 흰색으로 설정
-    border: Border.all(color: Colors.grey),
-    borderRadius: BorderRadius.circular(8),
-    image: selectedImages[index] != null
-    ? DecorationImage(
-    image: FileImage(selectedImages[index]!),
-    fit: BoxFit.cover,
-    )
-        : null,
-    ),
-    ),
-    ),
-    ),
-    ],
-    ),
-
+                // 이미지 슬롯들
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(
+                    4,
+                    (index) => Container(
+                      width: 76,
+                      height: 76,
+                      decoration: BoxDecoration(
+                        color: Colors.white, // 슬롯 배경을 흰색으로 설정
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(8),
+                        image: selectedImages[index] != null
+                            ? DecorationImage(
+                                image: FileImage(selectedImages[index]!),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
