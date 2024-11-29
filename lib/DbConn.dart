@@ -1,6 +1,7 @@
 import 'package:mysql_client/mysql_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'Post.dart'; // Post 모델 임포트
+import 'NoticePost.dart'; // Post 모델 임포트
 
 class DbConn {
   static MySQLConnection? _connection;
@@ -226,7 +227,7 @@ class DbConn {
     }
   }
 
-  //게시물 저장
+  //게시물 가져오기
   static Future<List<Post>> fetchPosts({
     required String type,
     String? placeKeyword,
@@ -344,6 +345,35 @@ class DbConn {
     }
   }
 
+  //공지사항을 저장
+  static Future<bool> saveNoticePost({
+    required String title,
+    required String body,
+    required int managerId,
+  }) async {
+    final connection = await getConnection();
+    try {
+      // SQL 쿼리 실행
+      final result = await connection.execute(
+        '''
+        INSERT INTO notices (title, body, manager_id) 
+        VALUES (:title, :body, :managerId)
+        ''',
+        {
+          'title': title,
+          'body': body,
+          'managerId': managerId,
+        },
+      );
+
+      // 성공 여부 반환
+      return result.affectedRows > BigInt.zero;
+    } catch (e) {
+      print("Error saving notice post: $e");
+      return false;
+    }
+  }
+
   /// 날짜를 MM/dd HH:mm 형식으로 포맷
   static String _formatDate(dynamic createdAt) {
     if (createdAt == null) return '';
@@ -368,4 +398,35 @@ class DbConn {
       return '';
     }
   }
+// 공지사항 가져오기
+  static Future<List<NoticePost>> fetchNoticePosts() async {
+    final connection = await getConnection(); // MySQL 연결
+    List<NoticePost> noticePosts = [];
+
+    try {
+      // notices 테이블에서 데이터를 가져오는 SQL 쿼리 실행
+      final results = await connection.execute(
+          '''
+      SELECT notice_id, title, body, created_at, manager_id
+      FROM notices
+      ORDER BY created_at DESC
+      '''
+      );
+
+      for (final row in results.rows) {
+        noticePosts.add(NoticePost(
+          noticeId: int.tryParse(row.assoc()['notice_id'] ?? '0') ?? 0,
+          title: row.assoc()['title'] ?? '',
+          body: row.assoc()['body'] ?? '',
+          createdAt: _calculateRelativeTime(row.assoc()['created_at']), // 상대 시간으로 변환
+          managerId: int.tryParse(row.assoc()['manager_id'] ?? '0'),
+        ));
+      }
+    } catch (e) {
+      print("Error fetching notice posts: $e");
+    }
+
+    return noticePosts;
+  }
+
 }
