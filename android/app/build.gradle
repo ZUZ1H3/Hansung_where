@@ -45,3 +45,11 @@ android {
 flutter {
     source = "../.."
 }
+
+apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
+
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:32.2.2') // Firebase BOM
+    implementation 'com.google.firebase:firebase-messaging' // Firebase Messaging
+}
