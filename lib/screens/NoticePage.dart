@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import 'WriteNoticePage.dart';
+import 'package:flutter/material.dart';
+import '/NoticePost.dart';
+import '/NoticePostCard.dart';
+import '../DbConn.dart';
+
 class NoticePage extends StatefulWidget {
   @override
   _NoticePageState createState() => _NoticePageState();
@@ -49,16 +54,37 @@ class _NoticePageState extends State<NoticePage> {
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: Center(
-                child: Text(
-                  '공지사항 페이지 내용이 여기에 표시됩니다.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-              ),
+              child: _buildNoticePostList(),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildNoticePostList() {
+    return FutureBuilder<List<NoticePost>>(
+      future: DbConn.fetchNoticePosts(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: \${snapshot.error}'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('공지사항이 없습니다.'));
+        } else {
+          List<NoticePost> noticePosts = snapshot.data!;
+
+          return ListView.builder(
+            itemCount: noticePosts.length,
+            itemBuilder: (context, index) {
+              return NoticePostCard(
+                noticePost: noticePosts[index],
+              );
+            },
+          );
+        }
+      },
     );
   }
 }

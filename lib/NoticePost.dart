@@ -1,17 +1,15 @@
 class NoticePost {
-  final int noticePostId;
+  final int noticeId;
   final String title;
   final String body;
   final String createdAt;
-  final int userId;
-
+  final int? managerId;
 
   NoticePost({
-    required this.noticePostId,
+    required this.noticeId,
     required this.title,
     required this.body,
     required this.createdAt,
-    required this.userId,
-
+    this.managerId,
   });
 }

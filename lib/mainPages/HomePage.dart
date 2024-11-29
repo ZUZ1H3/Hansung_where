@@ -100,12 +100,6 @@ class _HomePageState extends State<HomePage> {
   }
 
 
-  Widget _buildTabBarView(List<String> types) {
-    return TabBarView(
-      children: types.map((type) => _buildPostList(type)).toList(),
-    );
-  }
-
   Widget _buildTag(String tag, bool isSelected) {
     return GestureDetector(
       onTap: () {
