@@ -226,7 +226,7 @@ class DbConn {
     }
   }
 
-  //게시물 저장
+  //게시물 가져오기
   static Future<List<Post>> fetchPosts({
     required String type,
     String? placeKeyword,
@@ -341,6 +341,35 @@ class DbConn {
     } catch (e) {
       print("Error retrieving post: $e");
       return null;
+    }
+  }
+
+  //공지사항을 저장
+  static Future<bool> saveNoticePost({
+    required String title,
+    required String body,
+    required int managerId,
+  }) async {
+    final connection = await getConnection();
+    try {
+      // SQL 쿼리 실행
+      final result = await connection.execute(
+        '''
+        INSERT INTO notices (title, body, manager_id) 
+        VALUES (:title, :body, :managerId)
+        ''',
+        {
+          'title': title,
+          'body': body,
+          'managerId': managerId,
+        },
+      );
+
+      // 성공 여부 반환
+      return result.affectedRows > BigInt.zero;
+    } catch (e) {
+      print("Error saving notice post: $e");
+      return false;
     }
   }
 
