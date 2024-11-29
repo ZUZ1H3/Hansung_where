@@ -6,6 +6,9 @@ import 'mainPages/MapPage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'screens/PostPage.dart';
+import 'LoginPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // 백그라운드 메시지 처리 핸들러
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -37,7 +40,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: ColorStyles.seedColor,
         useMaterial3: true,
       ),
-      //home: LoginPage(),
+       //home: PostPage(1, 'lost'),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
@@ -54,6 +57,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 1;
+  SharedPreferences? prefs;
   final List<Widget> _pages = [
     MapPage(),
     HomePage(),
@@ -74,7 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
       icon: ImageIcon(AssetImage('assets/chat.png'), size: 32),
     ),
   ];
-
+  
   late FirebaseMessaging messaging;
 
   @override
@@ -121,6 +125,29 @@ class _MyHomePageState extends State<MyHomePage> {
       print("Notification clicked!");
       // 알림 클릭 시 화면 전환이나 다른 작업 추가
     });
+    
+  Future<void> _initPrefs() async {
+    prefs = await SharedPreferences.getInstance();
+    setState(() {}); // 상태 갱신
+  }
+
+  Future<void> _moveChat() async {
+    if (prefs == null) {
+      await _initPrefs(); // SharedPreferences 초기화 완료 대기
+    }
+    final isLogIn = prefs!.getBool('isLogIn') ?? false;
+
+    if (isLogIn) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ChatPage()),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    }
   }
 
   @override
@@ -141,9 +168,13 @@ class _MyHomePageState extends State<MyHomePage> {
           showSelectedLabels: false,
           showUnselectedLabels: false,
           onTap: (int index) {
-            setState(() {
-              _selectedIndex = index;
-            });
+            if (index == 2) { // 채팅 메뉴 클릭 시
+              _moveChat(); // 로그인 여부에 따라 페이지 이동
+            } else {
+              setState(() {
+                _selectedIndex = index;
+              });
+            }
           },
           items: bottomItems),
     );

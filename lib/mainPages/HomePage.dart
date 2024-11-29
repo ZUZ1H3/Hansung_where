@@ -15,7 +15,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<String> tags = ['전체', '원스톱', '학식당', '학술정보관', '상상빌리지', '상상관'];
+  final List<String> tags = ['전체', '원스톱', '학식당', '학술정보관', '상상빌리지', '상상파크'];
   String selectedTag = '전체';
   bool isPopupVisible = false; // 팝업 표시 여부
   SharedPreferences? prefs; // SharedPreferences를 클래스 변수로 선언
@@ -72,7 +72,10 @@ class _HomePageState extends State<HomePage> {
           return ListView.builder(
             itemCount: posts.length,
             itemBuilder: (context, index) {
-              return PostCard(post: posts[index]);
+              return PostCard(
+                post: posts[index],
+                type: type,
+              );
             },
           );
         }
@@ -148,23 +151,51 @@ class _HomePageState extends State<HomePage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildPopupButton('습득물', () {
-          setState(() {
-            isPopupVisible = false;
-          });
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => WritePage(type: 'found')),
-          );
+        _buildPopupButton('습득물', () async {
+          final isLogIn = prefs?.getBool('isLogIn') ?? false; // 로그인 상태 확인
+
+          if (isLogIn) {
+            // 로그인 상태
+            setState(() {
+              isPopupVisible = false;
+            });
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => WritePage(type: 'found')),
+            );
+          } else {
+            // 비로그인 상태
+            setState(() {
+              isPopupVisible = false;
+            });
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => LoginPage()),
+            );
+          }
         }),
-        _buildPopupButton('분실물', () {
-          setState(() {
-            isPopupVisible = false;
-          });
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => WritePage(type: 'lost')),
-          );
+        _buildPopupButton('분실물', () async {
+          final isLogIn = prefs?.getBool('isLogIn') ?? false; // 로그인 상태 확인
+
+          if (isLogIn) {
+            // 로그인 상태
+            setState(() {
+              isPopupVisible = false;
+            });
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => WritePage(type: 'lost')),
+            );
+          } else {
+            // 비로그인 상태
+            setState(() {
+              isPopupVisible = false;
+            });
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => LoginPage()),
+            );
+          }
         }),
       ],
     );
