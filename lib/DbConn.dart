@@ -229,9 +229,11 @@ class DbConn {
     try {
       String sql = '''
     SELECT 
+      post_id,
       title, 
       body, 
       created_at, 
+      user_id,
       image_url1, 
       place_keyword, 
       thing_keyword 
@@ -261,9 +263,11 @@ class DbConn {
         final relativeTime = _calculateRelativeTime(rawCreatedAt);
 
         posts.add(Post(
+          postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           title: row.assoc()['title'] ?? '',
           body: row.assoc()['body'] ?? '',
           createdAt: relativeTime, // 상대적 시간으로 변환된 값 사용
+          userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
           imageUrl1: row.assoc()['image_url1'],
           place: row.assoc()['place_keyword'],
           thing: row.assoc()['thing_keyword'],
@@ -293,4 +297,65 @@ class DbConn {
       return '${difference.inDays}일 전';
     }
   }
+
+  // postId로 게시물 내용 가져오기
+  static Future<Map<String, dynamic>?> getPostById(int postId) async {
+    final connection = await getConnection();
+    try {
+      // execute로 SELECT 쿼리 실행
+      final result = await connection.execute(
+        '''
+      SELECT *
+      FROM posts 
+      WHERE post_id = :postId
+      ''',
+        {'postId': postId},
+      );
+
+      // 결과가 없다면 null 반환
+      if (result.rows.isEmpty) return null;
+
+      // 첫 번째 행 가져오기
+      final row = result.rows.first.assoc();
+
+      // 생성 날짜 포맷팅 MM/DD HH:MM 형식으로
+      if (row['created_at'] != null) {
+        row['created_at'] = _formatDate(row['created_at']);
+      }
+
+      // 결과가 있다면 한 줄로 반환
+      return row.map((key, value) => MapEntry(
+        key,
+        value ?? (['title', 'body', 'created_at'].contains(key) ? '' : null),
+      ));
+    } catch (e) {
+      print("Error retrieving post: $e");
+      return null;
+    }
+  }
+  /// 날짜를 MM/dd HH:mm 형식으로 포맷
+  static String _formatDate(dynamic createdAt) {
+    if (createdAt == null) return '';
+
+    try {
+      DateTime parsedDate;
+
+      if (createdAt is int) {
+        // Unix timestamp를 DateTime으로 변환
+        parsedDate = DateTime.fromMillisecondsSinceEpoch(createdAt * 1000);
+      } else if (createdAt is String) {
+        // ISO 8601 문자열을 DateTime으로 변환
+        parsedDate = DateTime.parse(createdAt);
+      } else {
+        return ''; // 처리할 수 없는 형식
+      }
+
+      // MM/dd HH:mm 형식으로 변환
+      return '${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.day.toString().padLeft(2, '0')} ${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      print("Error formatting date: $e");
+      return '';
+    }
+  }
+
 }

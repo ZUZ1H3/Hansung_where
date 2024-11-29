@@ -1,15 +1,30 @@
 import 'package:flutter/material.dart';
-import '../Post.dart';
-import '../theme/colors.dart';
+import 'theme/colors.dart';
+import 'package:hansung_where/screens/PostPage.dart';
+import 'Post.dart';
 
 class PostCard extends StatelessWidget {
   final Post post;
+  final String type;
 
-  const PostCard({Key? key, required this.post}) : super(key: key);
+  const PostCard({Key? key, required this.post, required this.type}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () {
+      // 클릭 시 PostPage로 이동
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PostPage(
+            post_id: post.postId,   // postId 전달
+            type: type,
+          ),
+        ),
+      );
+      },
+    child: Container(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
       padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
@@ -76,6 +91,7 @@ class PostCard extends StatelessWidget {
             ),
         ],
       ),
+    ),
     );
   }
 

@@ -441,7 +441,7 @@ class _MyPageState extends State<MyPage> {
                 Navigator.of(context).pop(); // 다이얼로그 닫기
               },
               child: const Text('저장',
-                  style: TextStyle(fontSize: 16, color: ColorStyles.mainBlue)),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: ColorStyles.mainBlue)),
             ),
           ],
         );
@@ -481,7 +481,7 @@ class RoundBadges extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: Color(0xFFEDEDED),
+          color: ColorStyles.borderGrey,
           width: 1.0,
         ),
       ),
