@@ -8,6 +8,7 @@ import '../theme/colors.dart';
 import '../PostCard.dart';
 import '../Post.dart';
 import '../DbConn.dart';
+import '../screens/ManagerPage.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -31,21 +32,36 @@ class _HomePageState extends State<HomePage> {
     setState(() {}); // 초기화 후 상태 갱신
   }
 
+  //userId를 가져옴
+  Future<int> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final studentId = prefs.getString('studentId');
+    return int.tryParse(studentId ?? '') ?? 0; // 기본값 설정
+  }
+
   Future<void> _movePage(String pageType) async {
     if (prefs == null) return; // prefs 초기화 확인
     final isLogIn = prefs!.getBool('isLogIn') ?? false;
+    Widget targetPage;
 
     if (isLogIn) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => pageType == 'notification' ? NotificationPage() : MyPage(),
-        ),
-      );
+      if (pageType == 'notification') {
+        targetPage = NotificationPage();
+      } else if (pageType == 'manager') {
+        targetPage = ManagerPage();
+      } else {
+        targetPage = MyPage();
+      }
     } else {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+      targetPage = LoginPage();
     }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => targetPage),
+    );
   }
+
 
   Widget _buildPostList(String type) {
     return FutureBuilder<List<Post>>(
@@ -233,9 +249,15 @@ class _HomePageState extends State<HomePage> {
                 ),
                 IconButton(
                   icon: Image.asset('assets/icons/ic_user.png', height: 20),
-                  onPressed: () {
-                    _movePage('user');
+                  onPressed: () async {
+                    final userId = await getUserId(); // 비동기로 userId 가져오기
+                    if (userId != 0) {
+                      _movePage('user'); // userId가 0이 아니면 MyPage로 이동
+                    } else {
+                      _movePage('manager'); // userId가 0이면 ManagerPage로 이동
+                    }
                   },
+
                 ),
               ],
               bottom: const TabBar(
