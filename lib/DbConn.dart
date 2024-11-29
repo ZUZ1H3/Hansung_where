@@ -52,7 +52,9 @@ class DbConn {
 
         // 닉네임 중복 확인
         do {
-          final randomNum = (1 + (999 - 1) * (DateTime.now().millisecondsSinceEpoch % 1000)).toString();
+          final randomNum =
+              (1 + (999 - 1) * (DateTime.now().millisecondsSinceEpoch % 1000))
+                  .toString();
           nickname = '부기$randomNum';
           final nicknameResults = await conn.execute(
             'SELECT COUNT(*) AS count FROM users WHERE nickname = :nickname',
@@ -65,7 +67,11 @@ class DbConn {
         // 사용자 정보 삽입
         await conn.execute(
           'INSERT INTO users (student_id, nickname, profile) VALUES (:studentId, :nickname, :profileId)',
-          {'studentId': studentId, 'nickname': nickname, 'profileId': profileId},
+          {
+            'studentId': studentId,
+            'nickname': nickname,
+            'profileId': profileId
+          },
         );
       }
 
@@ -93,7 +99,8 @@ class DbConn {
   }
 
   // 닉네임 업데이트
-  static Future<bool> updateNickname(String studentId, String newNickname) async {
+  static Future<bool> updateNickname(
+      String studentId, String newNickname) async {
     final connection = await getConnection();
     try {
       final result = await connection.execute(
@@ -155,7 +162,6 @@ class DbConn {
     return false;
   }
 
-
   // 게시물 저장
   static Future<bool> savePost({
     required String title,
@@ -207,8 +213,10 @@ class DbConn {
         '''
         SELECT COUNT(*) AS count 
         FROM posts 
-        WHERE type = 'found' AND place_keyword = :placeKeyword
-        ''',
+        WHERE type = 'found' 
+        AND place_keyword = :placeKeyword
+        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      ''',
         {'placeKeyword': placeKeyword},
       );
       return int.parse(result.rows.first.assoc()['count'] ?? '0');
@@ -217,6 +225,7 @@ class DbConn {
       return 0;
     }
   }
+
   //게시물 저장
   static Future<List<Post>> fetchPosts({
     required String type,
@@ -266,7 +275,8 @@ class DbConn {
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           title: row.assoc()['title'] ?? '',
           body: row.assoc()['body'] ?? '',
-          createdAt: relativeTime, // 상대적 시간으로 변환된 값 사용
+          createdAt: relativeTime,
+          // 상대적 시간으로 변환된 값 사용
           userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
           imageUrl1: row.assoc()['image_url1'],
           place: row.assoc()['place_keyword'],
@@ -279,7 +289,6 @@ class DbConn {
 
     return posts; // 연결을 닫지 않고 재사용
   }
-
 
   static String _calculateRelativeTime(String? createdAt) {
     if (createdAt == null) return '';
@@ -325,14 +334,16 @@ class DbConn {
 
       // 결과가 있다면 한 줄로 반환
       return row.map((key, value) => MapEntry(
-        key,
-        value ?? (['title', 'body', 'created_at'].contains(key) ? '' : null),
-      ));
+            key,
+            value ??
+                (['title', 'body', 'created_at'].contains(key) ? '' : null),
+          ));
     } catch (e) {
       print("Error retrieving post: $e");
       return null;
     }
   }
+
   /// 날짜를 MM/dd HH:mm 형식으로 포맷
   static String _formatDate(dynamic createdAt) {
     if (createdAt == null) return '';
@@ -357,5 +368,4 @@ class DbConn {
       return '';
     }
   }
-
 }
