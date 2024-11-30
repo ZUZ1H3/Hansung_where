@@ -40,7 +40,6 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: ColorStyles.seedColor,
         useMaterial3: true,
       ),
-      //home: PostPage(1, 'lost'),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }

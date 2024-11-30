@@ -2,122 +2,118 @@ import 'package:flutter/material.dart';
 import 'theme/colors.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-class RoundComment extends StatelessWidget {
-  final String nickname;       // 닉네임
-  final String body;           // 내용
-  final String createdAt;      // 작성 시간
-  final Color borderColor;     // 외부에서 전달받은 외곽선 색상
-  final Function() onReplyClick; // 댓글 버튼 클릭 시 실행될 함수
+class RoundReply extends StatelessWidget {
+  final String nickname; // 닉네임
+  final String body; // 내용
+  final String createdAt; // 작성 시간
   final String userId;         // 사용자 학번
   final String commenterId;    // 작성자 학번
 
   // GlobalKey를 사용하여 점 버튼의 위치를 추적
   final GlobalKey _dotsKey = GlobalKey();
 
-  RoundComment({
+  RoundReply({
     required this.nickname,
     required this.body,
     required this.createdAt,
-    required this.borderColor,
-    required this.onReplyClick,
     required this.userId,
     required this.commenterId,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: borderColor, // 외부에서 전달된 외곽선 색상 사용
-          width: 1,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 답글 아이콘
+        Padding(
+          padding: const EdgeInsets.only(top: 8, right: 5),
+          child: Image.asset(
+            'assets/icons/ic_reply.png',
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+          ),
         ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 5), // 오른쪽으로 5만큼 이동
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        nickname, // 닉네임 출력
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  // 댓글 내용 (스크롤 가능)
-                  Container(
-                    constraints: const BoxConstraints(maxHeight: 120), // 최대 높이
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: Text(
-                        body,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black,
-                          height: 1.6,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  // 작성 시간
-                  Text(
-                    createdAt,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF858585),
-                    ),
-                  ),
-                ],
+        // 댓글 내용 컨테이너 (점 버튼 포함)
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.only(
+                top: 15, left: 10, right: 10, bottom: 10), // 여백 조정
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: ColorStyles.borderGrey,
+                width: 1,
               ),
             ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              GestureDetector(
-                onTap: onReplyClick,
-                child: Image.asset(
-                  'assets/icons/ic_comment.png',
-                  width: 18,
-                  height: 18,
-                  fit: BoxFit.contain,
+            child: Stack(
+              children: [
+                // 댓글 내용 및 작성 시간
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 닉네임 출력
+                    Text(
+                      nickname,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // 댓글 내용 (스크롤 가능)
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 100),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: Text(
+                          body,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black,
+                            height: 1.6,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // 작성 시간
+                    Text(
+                      createdAt,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF858585),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 3), // 점 버튼과 댓글 버튼 사이 간격
-              GestureDetector(
-                key: _dotsKey,  // GlobalKey를 설정하여 점 위치를 추적
-                onTap: () {
-                  _showCommentPopupMenu(context); // 점 버튼 클릭 시 팝업 메뉴 띄우기
-                },
-                child: Image.asset(
-                  'assets/icons/ic_dots.png', // 점 버튼 이미지
-                  width: 18,
-                  height: 18,
-                  fit: BoxFit.contain,
+                // 점 버튼 (컨테이너 오른쪽 상단에 고정)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    key: _dotsKey,  // GlobalKey를 설정하여 점 위치를 추적
+                    onTap: () {
+                      _showCommentPopupMenu(context); // 점 버튼 클릭 시 팝업 메뉴 띄우기
+                    },
+                    child: Image.asset(
+                      'assets/icons/ic_dots.png', // 점 버튼 이미지
+                      width: 18,
+                      height: 18,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
-
   // 점 버튼 위치를 계산하고 팝업 메뉴를 띄우는 함수
   void _showCommentPopupMenu(BuildContext context) async {
     final RenderBox renderBox = _dotsKey.currentContext?.findRenderObject() as RenderBox;
