@@ -409,7 +409,6 @@ class DbConn {
     int? parentCommentId,
   }) async {
     final connection = await getConnection();
-    bool success = false;
 
     try {
       var result = await connection.execute(
@@ -598,4 +597,63 @@ class DbConn {
     }
     return null;
   }
+
+  // 게시물 삭제
+  static Future<void> deletePostById({required int postId}) async {
+    final connection = await getConnection();
+
+    try {
+      await connection.execute(
+        '''
+      DELETE FROM posts
+      WHERE post_id = :postId
+      ''',
+        {'postId': postId},
+      );
+      print('게시물 삭제 성공');
+    } catch (e) {
+      print('게시물 삭제 오류: $e');
+    }
+  }
+  // 댓글 삭제
+  static Future<void> deleteCommentById({required int commentId}) async {
+    final connection = await getConnection();
+
+    try {
+      await connection.execute(
+        '''
+      DELETE FROM comments
+      WHERE comment_id = :commentId
+      ''',
+        {'commentId': commentId},
+      );
+      print('댓글 삭제 성공');
+    } catch (e) {
+      print('댓글 삭제 오류: $e');
+    }
+  }
+
+  // 게시물 타입 알아내기
+  static Future<String?> fetchTypeById({required int postId}) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(
+          '''
+          SELECT type 
+          FROM posts 
+          WHERE post_id = ?
+          ''',
+        {'postId': postId},
+      );
+
+      if (result.rows.isNotEmpty) {
+        final row = result.rows.first.assoc();
+        return row['type']; // 예: 'notice', 'blog', 'article' 등의 값
+      }
+    } catch (e) {
+      print('가져오기 실패: $e');
+    }
+    return null;
+  }
+
 }

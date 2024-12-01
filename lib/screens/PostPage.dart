@@ -9,6 +9,7 @@ import '../RoundComment.dart';
 import '../RoundReply.dart';
 import '../Post.dart';
 import '../Comment.dart';
+import 'WritePage.dart';
 
 class PostPage extends StatefulWidget {
   final int post_id;
@@ -35,6 +36,8 @@ class _PostPageState extends State<PostPage> {
   bool hasFocus = false;
   bool replyClicked = false;
   int? commentId;
+  int? selectedCommentId; // 현재 선택된 댓글 ID
+  String postType = "";
 
   @override
   void initState() {
@@ -43,6 +46,7 @@ class _PostPageState extends State<PostPage> {
     _initPref(); // SharedPreferences 초기화
     _fetchComments(); // 댓글 불러오기
     _focusNode.addListener(_onFocusChanged); // 포커스 변화
+    _fetchPostType();
   }
 
   @override
@@ -62,20 +66,19 @@ class _PostPageState extends State<PostPage> {
   void _onReplyClick(int commentId) {
     setState(() {
       replyClicked = !replyClicked;
+      selectedCommentId = selectedCommentId == commentId ? null : commentId;
 
       if (replyClicked) {
         commentType = 'reply';
-        borderColor = ColorStyles.mainBlue;
         this.commentId = commentId;
       } else {
         commentType = 'comment';
-        borderColor = ColorStyles.borderGrey;
         this.commentId = null;
       }
     });
   }
 
-
+  // 게시물 가져오기
   Future<Map<String, dynamic>?> _fetchPostData() async {
     try {
       final postData = await DbConn.getPostById(widget.post_id);
@@ -92,6 +95,7 @@ class _PostPageState extends State<PostPage> {
     }
   }
 
+  // 댓글 가져오기
   Future<void> _fetchComments() async {
     try {
       // 댓글 불러오기
@@ -107,6 +111,35 @@ class _PostPageState extends State<PostPage> {
       });
     } catch (e) {
       print("Error fetching comments: \$e");
+    }
+  }
+
+  // 게시물 삭제하기
+  void _deletePost(int postId) async {
+    try {
+      await DbConn.deletePostById(postId: widget.post_id);
+      _showToast("게시물이 삭제되었습니다.");
+      Navigator.pop(context);
+    } catch(e) {
+      print("댓글 삭제 오류: $e");
+    }
+  }
+
+  // 댓글 삭제하기
+  void _deleteComment(int commentId) async {
+    try {
+      await DbConn.deleteCommentById(commentId: commentId);
+    } catch(e) {
+      print("댓글 삭제 오류: $e");
+    }
+  }
+
+  // 현재 Post의 타입 불러오기
+  Future<void> _fetchPostType() async {
+    try {
+      postType = (await DbConn.fetchTypeById(postId: widget.post_id)).toString();
+    } catch(e) {
+      print("타입 불러오기 오류: $e");
     }
   }
 
@@ -187,6 +220,7 @@ class _PostPageState extends State<PostPage> {
                         GestureDetector(
                           onTap: () {
                             _showPopupMenu(context, postUserId, studentId);
+                            selectedCommentId = null;
                           },
                           child: Image.asset(
                             'assets/icons/ic_dots.png',
@@ -244,7 +278,9 @@ class _PostPageState extends State<PostPage> {
                               thing: postData['thing_keyword'] as String?,
                             );
 
-                            return Column(
+                            // 게시물
+                            return SingleChildScrollView(
+                              child: Column(
                               children: [
                                 RoundPost(
                                   profile: profilePath,
@@ -261,9 +297,12 @@ class _PostPageState extends State<PostPage> {
                                     ? Container() // 댓글이 없을 때 빈 공간 표시
                                     : ListView.builder(
                                   shrinkWrap: true, // ListView가 부모 크기를 초과하지 않도록 제한
+                                  physics: NeverScrollableScrollPhysics(),
                                   itemCount: comments.length,
                                   itemBuilder: (context, index) {
                                     final comment = comments[index];
+                                    final isSelected = comment.commentId == selectedCommentId;
+
                                     return Padding(
                                       padding: const EdgeInsets.only(bottom: 10), // 댓글들 사이 간격 10
                                       child: comment.parentCommentId == null
@@ -271,12 +310,19 @@ class _PostPageState extends State<PostPage> {
                                         nickname: comment.nickname ?? '',
                                         body: comment.body,
                                         createdAt: comment.createdAt,
-                                        borderColor: borderColor,
+                                        borderColor: isSelected
+                                        ? ColorStyles.mainBlue
+                                        : ColorStyles.borderGrey,
                                         onReplyClick: () {
                                           _onReplyClick(comment.commentId);
                                         },
                                         userId: studentId,
                                         commenterId: comment.userId.toString(),
+                                        commentId: comment.commentId,
+                                        onDeleteClick: (commentId) {
+                                          _deleteComment(commentId);
+                                          _fetchComments(); // 댓글 동기화
+                                        },
                                       )
                                           : RoundReply(
                                         nickname: comment.nickname ?? '',
@@ -284,11 +330,17 @@ class _PostPageState extends State<PostPage> {
                                         createdAt: comment.createdAt,
                                         userId: studentId,
                                         commenterId: comment.userId.toString(),
+                                        commentId: comment.commentId,
+                                        onDeleteClick: (commentId) {
+                                          _deleteComment(commentId);
+                                          _fetchComments(); // 댓글 동기화
+                                        },
                                       ),
                                     );
                                   },
                                 ),
                               ],
+                              ),
                             );
                           },
                         );
@@ -339,7 +391,8 @@ class _PostPageState extends State<PostPage> {
                     String newComment = _commentController.text.trim();
                     if (newComment.isNotEmpty) {
                       _addComment(newComment);
-                      _commentController.clear();
+                      replyClicked = false;
+                      selectedCommentId = null;
                     }
                   },
                   child: Image.asset(
@@ -415,6 +468,7 @@ class _PostPageState extends State<PostPage> {
           text: "편집하기",
           onTap: () {
             Navigator.pop(context); // 메뉴 닫기
+            _pushPostIdForEdit();
             _showToast("함수 추가 예정");
           },
         ),
@@ -425,13 +479,12 @@ class _PostPageState extends State<PostPage> {
           text: "삭제하기",
           onTap: () {
             Navigator.pop(context);
-            _showToast("함수 추가 예정");
+            _deletePost(widget.post_id);
           }, paddingTop: 8,
         ),
       ],
     );
   }
-
   // 사용자 팝업 메뉴
   void _showUserPopupMenu(BuildContext context) async {
     final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
@@ -615,6 +668,20 @@ class _PostPageState extends State<PostPage> {
         );
       },
     );
+  }
+
+  // 편집하기 함수
+  void _pushPostIdForEdit() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => WritePage(type: postType),
+        settings: RouteSettings(
+          arguments: widget.post_id,  // 전달할 데이터
+        ),
+      ),
+    );
+
   }
 
   // Toast 메시지 표시 함수

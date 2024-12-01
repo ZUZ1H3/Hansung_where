@@ -8,6 +8,8 @@ class RoundReply extends StatelessWidget {
   final String createdAt; // 작성 시간
   final String userId;         // 사용자 학번
   final String commenterId;    // 작성자 학번
+  final int commentId;         // 댓글 ID
+  final Function(int commentId) onDeleteClick; // 삭제 버튼 클릭 시 실행될 함수
 
   // GlobalKey를 사용하여 점 버튼의 위치를 추적
   final GlobalKey _dotsKey = GlobalKey();
@@ -18,6 +20,8 @@ class RoundReply extends StatelessWidget {
     required this.createdAt,
     required this.userId,
     required this.commenterId,
+    required this.commentId,
+    required this.onDeleteClick,
   });
 
   @override
@@ -119,7 +123,7 @@ class RoundReply extends StatelessWidget {
     final RenderBox renderBox = _dotsKey.currentContext?.findRenderObject() as RenderBox;
     final position = renderBox.localToGlobal(Offset.zero); // 점 버튼의 위치
 
-    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
 
     // 사용자 학번과 작성자 학번을 비교
     bool isUserOwner = userId == commenterId;
@@ -148,7 +152,7 @@ class RoundReply extends StatelessWidget {
             text: "삭제하기",
             onTap: () {
               Navigator.pop(context); // 메뉴 닫기
-              _showToast("삭제 기능 추가 예정");
+              onDeleteClick(commentId);
             },
           ),
         ] else ...[
@@ -181,7 +185,7 @@ class RoundReply extends StatelessWidget {
     final RenderBox renderBox = _dotsKey.currentContext!.findRenderObject() as RenderBox;
     final position = renderBox.localToGlobal(Offset.zero); // 점 버튼의 위치
 
-    final RenderBox overlay = Overlay.of(context)!.context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
 
     await showMenu(
       context: context,

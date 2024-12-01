@@ -18,7 +18,7 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with RouteAware {
   final List<String> tags = ['전체', '원스톱', '학식당', '학술정보관', '상상빌리지', '상상파크'];
   String selectedTag = '전체';
   bool isPopupVisible = false; // 팝업 표시 여부
@@ -28,6 +28,14 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _initPrefs(); // SharedPreferences 초기화
+    _refreshPosts();
+  }
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // 화면이 돌아올 때 새로고침
+    _refreshPosts();
   }
 
   Future<void> _initPrefs() async {
@@ -65,6 +73,12 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // 새로고침
+  Future<void> _refreshPosts() async {
+    setState(() {
+      DbConn.fetchPosts(type: selectedTag);  // 데이터 갱신
+    });
+  }
 
   Widget _buildPostList(String type) {
     return FutureBuilder(
@@ -296,8 +310,15 @@ class _HomePageState extends State<HomePage> {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      _buildPostList('found'), // 습득물
-                      _buildPostList('lost'),  // 분실물
+                      // 당길 때 새로고침 기능 추가
+                      RefreshIndicator(
+                        onRefresh: _refreshPosts,
+                        child: _buildPostList('found'), // 습득물
+                      ),
+                      RefreshIndicator(
+                        onRefresh: _refreshPosts,
+                        child: _buildPostList('lost'),  // 분실물
+                      ),
                     ],
                   ),                ),
               ],
