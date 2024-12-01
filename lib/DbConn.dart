@@ -1,6 +1,7 @@
 import 'package:mysql_client/mysql_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'Post.dart'; // Post 모델 임포트
+import 'Comment.dart';
 import 'NoticePost.dart'; // Post 모델 임포트
 
 class DbConn {
@@ -375,7 +376,7 @@ class DbConn {
     }
   }
 
-  /// 날짜를 MM/dd HH:mm 형식으로 포맷
+  // 날짜를 MM/dd HH:mm 형식으로 포맷
   static String _formatDate(dynamic createdAt) {
     if (createdAt == null) return '';
 
@@ -400,7 +401,103 @@ class DbConn {
     }
   }
 
-  //공지사항 가져오기
+  // 댓글 저장하기
+  static Future<bool> saveComment({
+    required int postId,
+    required int userId,
+    required String body,
+    required String type,
+    int? parentCommentId,
+  }) async {
+    final connection = await getConnection();
+    bool success = false;
+
+    try {
+      var result = await connection.execute(
+        '''
+        INSERT INTO comments (post_id, user_id, body, type, parent_comment_id) 
+        VALUES (:postId, :userId, :body, :type, :parentCommentId)
+        ''',
+        {
+          'postId': postId,
+          'userId': userId,
+          'body': body,
+          'type': type,
+          'parentCommentId': parentCommentId,
+        },
+      );
+
+      return result.affectedRows > BigInt.zero;
+
+    } catch (e) {
+      print('DB 연결 실패: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return false;
+  }
+
+  // 댓글 가져오기
+  static Future<List<Comment>> fetchComments({
+    required int postId,
+  }) async {
+    final connection = await getConnection();
+    List<Comment> comments = [];
+    Map<int, List<Comment>> groupedComments = {}; // 댓글 그룹화 위한 맵
+
+    try {
+      final result = await connection.execute(
+        '''
+      SELECT *
+      FROM comments 
+      WHERE post_id = :postId
+      ''',
+        {'postId': postId},
+      );
+
+      for (final row in result.rows) {
+        final rawCreatedAt = row.assoc()['created_at'];
+        final formattedCreatedAt = rawCreatedAt != null
+            ? _formatDate(rawCreatedAt)
+            : '';
+
+        final comment = Comment(
+          commentId: int.tryParse(row.assoc()['comment_id']?.toString() ?? '') ?? 0,
+          postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
+          userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
+          body: row.assoc()['body'] ?? '',
+          createdAt: formattedCreatedAt,
+          type: row.assoc()['type'] ?? '',
+          parentCommentId: row.assoc()['parent_comment_id'] != null
+              ? int.tryParse(row.assoc()['parent_comment_id']?.toString() ?? '')
+              : null,
+        );
+
+        // userId로 닉네임을 가져와서 댓글에 추가
+        final nickname = await getNickname(comment.userId.toString());
+        comment.nickname = nickname;
+
+        comments.add(comment);
+
+        // parent_comment_id에 따른 그룹화
+        if (comment.parentCommentId != null) {
+          if (!groupedComments.containsKey(comment.parentCommentId)) {
+            groupedComments[comment.parentCommentId!] = [];
+          }
+          groupedComments[comment.parentCommentId!]!.add(comment);
+        }
+      }
+    } catch (e) {
+      print('Error fetching comments: $e');
+    }
+
+    // 댓글을 그룹화된 형태로 반환
+    return comments;
+  }
+
+
+  // 공지사항 가져오기
   static Future<List<NoticePost>> fetchNoticePosts() async {
     final connection = await getConnection(); // MySQL 연결
     List<NoticePost> noticePosts = [];
