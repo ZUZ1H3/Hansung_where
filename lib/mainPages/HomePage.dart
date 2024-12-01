@@ -7,8 +7,11 @@ import '../LoginPage.dart';
 import '../theme/colors.dart';
 import '../PostCard.dart';
 import '../Post.dart';
+import '../NoticePostCard.dart';
+import '../NoticePost.dart';
 import '../DbConn.dart';
 import '../screens/ManagerPage.dart';
+
 
 class HomePage extends StatefulWidget {
   @override
@@ -64,37 +67,49 @@ class _HomePageState extends State<HomePage> {
 
 
   Widget _buildPostList(String type) {
-    return FutureBuilder<List<Post>>(
-      future: DbConn.fetchPosts(type: type),
-      builder: (context, snapshot) {
+    return FutureBuilder(
+      future: Future.wait([
+        selectedTag == '전체' ? DbConn.fetchLatestNoticePosts() : Future.value(null), // 태그가 전체일 때만 공지사항 가져오기
+        DbConn.fetchPosts(type: type), // 게시물 가져오기
+      ]),
+      builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('게시물이 없습니다.'));
-        } else {
-          List<Post> posts = snapshot.data!;
-
-          // 선택된 태그에 따라 게시글 필터링
-          if (selectedTag != '전체') {
-            posts = posts.where((post) => post.place == selectedTag).toList();
-          }
-
-          if (posts.isEmpty) {
-            return const Center(child: Text('해당 장소의 게시물이 없습니다.'));
-          }
-
-          return ListView.builder(
-            itemCount: posts.length,
-            itemBuilder: (context, index) {
-              return PostCard(
-                post: posts[index],
-                type: type,
-              );
-            },
-          );
         }
+
+        final noticePost = snapshot.data?[0] as NoticePost?;
+        List<Post> posts = snapshot.data?[1] as List<Post>? ?? [];
+
+        // 선택된 태그에 따라 게시글 필터링
+        if (selectedTag != '전체') {
+          posts = posts.where((post) => post.place == selectedTag).toList();
+        }
+
+        if (noticePost == null && posts.isEmpty) {
+          return const Center(child: Text('게시물이 없습니다.'));
+        }
+
+        return ListView.builder(
+          itemCount: (noticePost != null ? 1 : 0) + posts.length,
+          itemBuilder: (context, index) {
+            if (index == 0 && noticePost != null) {
+              return NoticePostCard(
+                noticePost: noticePost,
+                showTitle: true,
+                isForHomePage: true,
+              );
+
+            }
+
+            // 이후 게시글 표시
+            return PostCard(
+              post: posts[index - (noticePost != null ? 1 : 0)],
+              type: type,
+            );
+          },
+        );
       },
     );
   }

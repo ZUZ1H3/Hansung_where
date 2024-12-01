@@ -398,7 +398,7 @@ class DbConn {
       return '';
     }
   }
-// 공지사항 가져오기
+  //공지사항 가져오기
   static Future<List<NoticePost>> fetchNoticePosts() async {
     final connection = await getConnection(); // MySQL 연결
     List<NoticePost> noticePosts = [];
@@ -428,5 +428,36 @@ class DbConn {
 
     return noticePosts;
   }
+
+  //가장 최근 공지
+  // 최신 공지사항 가져오기
+  static Future<NoticePost?> fetchLatestNoticePosts() async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(
+          '''
+      SELECT notice_id, title, body, created_at, manager_id 
+      FROM notices 
+      ORDER BY created_at DESC 
+      LIMIT 1
+      '''
+      );
+
+      if (result.rows.isNotEmpty) {
+        final row = result.rows.first.assoc();
+        return NoticePost(
+          noticeId: int.tryParse(row['notice_id'] ?? '0') ?? 0,
+          title: row['title'] ?? '',
+          body: row['body'] ?? '',
+          createdAt: _calculateRelativeTime(row['created_at']),
+          managerId: int.tryParse(row['manager_id'] ?? '0'),
+        );
+      }
+    } catch (e) {
+      print('Error fetching latest notice: $e');
+    }
+    return null;
+  }
+
 
 }
