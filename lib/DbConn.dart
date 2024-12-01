@@ -427,7 +427,6 @@ class DbConn {
       );
 
       return result.affectedRows > BigInt.zero;
-
     } catch (e) {
       print('DB 연결 실패: $e');
     } finally {
@@ -457,12 +456,12 @@ class DbConn {
 
       for (final row in result.rows) {
         final rawCreatedAt = row.assoc()['created_at'];
-        final formattedCreatedAt = rawCreatedAt != null
-            ? _formatDate(rawCreatedAt)
-            : '';
+        final formattedCreatedAt =
+            rawCreatedAt != null ? _formatDate(rawCreatedAt) : '';
 
         final comment = Comment(
-          commentId: int.tryParse(row.assoc()['comment_id']?.toString() ?? '') ?? 0,
+          commentId:
+              int.tryParse(row.assoc()['comment_id']?.toString() ?? '') ?? 0,
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
           body: row.assoc()['body'] ?? '',
@@ -495,7 +494,6 @@ class DbConn {
     return comments;
   }
 
-
   // 공지사항 가져오기
   static Future<List<NoticePost>> fetchNoticePosts() async {
     final connection = await getConnection(); // MySQL 연결
@@ -503,20 +501,19 @@ class DbConn {
 
     try {
       // notices 테이블에서 데이터를 가져오는 SQL 쿼리 실행
-      final results = await connection.execute(
-          '''
+      final results = await connection.execute('''
       SELECT notice_id, title, body, created_at, manager_id
       FROM notices
       ORDER BY created_at DESC
-      '''
-      );
+      ''');
 
       for (final row in results.rows) {
         noticePosts.add(NoticePost(
           noticeId: int.tryParse(row.assoc()['notice_id'] ?? '0') ?? 0,
           title: row.assoc()['title'] ?? '',
           body: row.assoc()['body'] ?? '',
-          createdAt: _calculateRelativeTime(row.assoc()['created_at']), // 상대 시간으로 변환
+          createdAt: _calculateRelativeTime(row.assoc()['created_at']),
+          // 상대 시간으로 변환
           managerId: int.tryParse(row.assoc()['manager_id'] ?? '0'),
         ));
       }
@@ -527,4 +524,78 @@ class DbConn {
     return noticePosts;
   }
 
+  static Future<Map<String, dynamic>?> getNoticePostById(int noticeId) async {
+    final connection = await getConnection();
+    try {
+      print("Fetching notice with ID: $noticeId"); // 디버깅 로그 추가
+
+      final result = await connection.execute(
+        '''
+      SELECT 
+        n.notice_id,
+        n.title,
+        n.body,
+        n.created_at,
+        u.student_id AS manager_id
+      FROM 
+        notices n
+      LEFT JOIN 
+        users u ON n.manager_id = u.student_id
+      WHERE 
+        n.notice_id = :noticeId
+      ''',
+        {'noticeId': noticeId},
+      );
+
+      if (result.rows.isEmpty) {
+        print('No data found for noticeId: $noticeId'); // 디버깅 로그
+        return null;
+      }
+
+      final row = result.rows.first.assoc();
+
+      print('Fetched row: $row'); // 디버깅 로그
+
+      if (row['created_at'] != null) {
+        row['created_at'] = _formatDate(row['created_at']); // 날짜 포맷팅
+      }
+
+      return row.map((key, value) => MapEntry(
+            key,
+            value ?? '',
+          ));
+    } catch (e) {
+      print("Error retrieving notice by ID: $e"); // 디버깅 로그
+      return null;
+    }
+  }
+
+  // 최신 공지사항 가져오기
+  static Future<NoticePost?> fetchLatestNoticePosts() async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(
+          '''
+      SELECT notice_id, title, body, created_at, manager_id 
+      FROM notices 
+      ORDER BY created_at DESC 
+      LIMIT 1
+      '''
+      );
+
+      if (result.rows.isNotEmpty) {
+        final row = result.rows.first.assoc();
+        return NoticePost(
+          noticeId: int.tryParse(row['notice_id'] ?? '0') ?? 0,
+          title: row['title'] ?? '',
+          body: row['body'] ?? '',
+          createdAt: _calculateRelativeTime(row['created_at']),
+          managerId: int.tryParse(row['manager_id'] ?? '0'),
+        );
+      }
+    } catch (e) {
+      print('Error fetching latest notice: $e');
+    }
+    return null;
+  }
 }

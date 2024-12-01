@@ -11,15 +11,18 @@ class RoundPost extends StatelessWidget {
   final List <String> keywords; // 키워드
   final List <String> images; // 이미지
 
+  final bool isNotice; // 공지사항 여부
+
   const RoundPost({
     required this.profile,
     required this.nickname,
     required this.createdAt,
     required this.title,
     required this.body,
-    required this.commentCnt,
-    required this.keywords,
-    required this.images,
+    this.commentCnt = 0, // 기본값 0
+    this.keywords = const [], // 기본값 빈 리스트
+    this.images = const [], // 기본값 빈 리스트
+    this.isNotice = false, // 기본값: 일반 게시물
   });
 
   @override
@@ -106,22 +109,26 @@ class RoundPost extends StatelessWidget {
             ),
           ),
           SizedBox(height: 12),
-          // 댓글 개수
-          Row(
-            children: [
-              Image.asset(
-                'assets/icons/ic_comment.png',
-                fit: BoxFit.contain,
-                width: 18,
-                height: 18,
+          // 댓글 개수 (공지사항이 아닌 경우에만 표시)
+          if (!isNotice)
+            Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  Image.asset(
+                    'assets/icons/ic_comment.png',
+                    fit: BoxFit.contain,
+                    width: 18,
+                    height: 18,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    commentCnt.toString(),
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ],
               ),
-              const SizedBox(width: 3),
-              Text(
-                commentCnt.toString(),
-                style: TextStyle(fontSize: 12),
-              ),
-            ],
-          ),
+            ),
           SizedBox(height: 12),
           // 키워드
           Wrap(

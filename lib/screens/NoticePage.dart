@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/colors.dart';
 import 'WriteNoticePage.dart';
-import 'package:flutter/material.dart';
 import '/NoticePost.dart';
 import '/NoticePostCard.dart';
 import '../DbConn.dart';
