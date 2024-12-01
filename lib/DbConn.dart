@@ -82,6 +82,7 @@ class DbConn {
     }
   }
 
+
   // 닉네임 가져오기
   static Future<String?> getNickname(String studentId) async {
     final connection = await getConnection();
@@ -398,6 +399,7 @@ class DbConn {
       return '';
     }
   }
+
   //공지사항 가져오기
   static Future<List<NoticePost>> fetchNoticePosts() async {
     final connection = await getConnection(); // MySQL 연결
@@ -429,7 +431,6 @@ class DbConn {
     return noticePosts;
   }
 
-  //가장 최근 공지
   // 최신 공지사항 가져오기
   static Future<NoticePost?> fetchLatestNoticePosts() async {
     final connection = await getConnection();
@@ -458,6 +459,53 @@ class DbConn {
     }
     return null;
   }
+
+  static Future<Map<String, dynamic>?> getNoticePostById(int noticeId) async {
+    final connection = await getConnection();
+    try {
+      print("Fetching notice with ID: $noticeId"); // 디버깅 로그 추가
+
+      final result = await connection.execute(
+        '''
+      SELECT 
+        n.notice_id,
+        n.title,
+        n.body,
+        n.created_at,
+        u.student_id AS manager_id
+      FROM 
+        notices n
+      LEFT JOIN 
+        users u ON n.manager_id = u.student_id
+      WHERE 
+        n.notice_id = :noticeId
+      ''',
+        {'noticeId': noticeId},
+      );
+
+      if (result.rows.isEmpty) {
+        print('No data found for noticeId: $noticeId'); // 디버깅 로그
+        return null;
+      }
+
+      final row = result.rows.first.assoc();
+
+      print('Fetched row: $row'); // 디버깅 로그
+
+      if (row['created_at'] != null) {
+        row['created_at'] = _formatDate(row['created_at']); // 날짜 포맷팅
+      }
+
+      return row.map((key, value) => MapEntry(
+        key,
+        value ?? '',
+      ));
+    } catch (e) {
+      print("Error retrieving notice by ID: $e"); // 디버깅 로그
+      return null;
+    }
+  }
+
 
 
 }

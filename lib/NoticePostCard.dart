@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'theme/colors.dart';
 import 'NoticePost.dart';
 import 'DbConn.dart';
+import 'package:hansung_where/screens/NoticePostPage.dart';
 
 class NoticePostCard extends StatelessWidget {
   final NoticePost noticePost;
@@ -24,7 +25,12 @@ class NoticePostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // 카드 클릭 이벤트 처리
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NoticePostPage(noticeId: noticePost.noticeId), // noticePost.noticeId 전달
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
