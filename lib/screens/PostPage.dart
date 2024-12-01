@@ -58,6 +58,13 @@ class _PostPageState extends State<PostPage> {
     });
   }
 
+  //userId를 가져옴
+  Future<int> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final studentId = prefs.getString('studentId');
+    return int.tryParse(studentId ?? '') ?? 0; // 기본값 설정
+  }
+
   // 답글 클릭 시 외곽선 색상 변경
   void _onReplyClick(int commentId) {
     setState(() {
@@ -605,9 +612,22 @@ class _PostPageState extends State<PostPage> {
               child: Text("취소", style: TextStyle(fontSize: 15, color: ColorStyles.darkGrey)),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context); // 다이얼로그 닫기
-                _showToast("신고가 접수되었습니다."); // 신고 처리
+
+                // 신고 처리
+                bool success = await DbConn.saveReport(
+                  userId: int.parse(postUserId),  // 로그인된 사용자 ID
+                  postId: widget.post_id,  // 항상 게시물 ID를 사용
+                  commentId: commentId,    // 댓글 ID는 존재할 경우에만 사용
+                  reason: reason,
+                );
+
+                if (success) {
+                  _showToast("신고가 접수되었습니다.");
+                } else {
+                  _showToast("신고 처리에 실패했습니다.");
+                }
               },
               child: Text("확인", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: ColorStyles.mainBlue)),
             ),

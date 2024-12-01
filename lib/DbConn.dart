@@ -598,4 +598,38 @@ class DbConn {
     }
     return null;
   }
+
+  static Future<bool> saveReport({
+    required int userId, // 신고된 사용자
+    int? postId, // 게시글 ID
+    int? commentId, // 댓글 ID
+    required String reason, // 신고 사유
+  }) async {
+    final connection = await getConnection();
+    bool success = false;
+
+    try {
+      // 게시글과 댓글 중 하나는 NULL로 저장되므로, 둘 중 하나는 항상 비어있게 됩니다.
+      var result = await connection.execute(
+        '''
+      INSERT INTO reports (user_id, post_id, comment_id, reason)
+      VALUES (:userId, :postId, :commentId, :reason)
+      ''',
+        {
+          'userId': userId,
+          'postId': postId ?? null, // postId는 null 가능
+          'commentId': commentId ?? null, // commentId는 null 가능
+          'reason': reason,
+        },
+      );
+
+      success = result.affectedRows > BigInt.zero;
+    } catch (e) {
+      print('DB 연결 실패: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return success;
+  }
 }
