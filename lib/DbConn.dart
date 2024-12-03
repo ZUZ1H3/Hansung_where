@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'Post.dart'; // Post 모델 임포트
 import 'Comment.dart';
 import 'NoticePost.dart'; // Post 모델 임포트
-
+import 'Report.dart';
 class DbConn {
   static MySQLConnection? _connection;
 
@@ -229,7 +229,7 @@ class DbConn {
   }
 
   //게시물 가져오기
-  static Future<List<Post>> fetchPosts({
+  static Future<List<Post>> getPosts({
     required String type,
     String? placeKeyword,
     String? thingKeyword,
@@ -437,7 +437,7 @@ class DbConn {
   }
 
   // 댓글 가져오기
-  static Future<List<Comment>> fetchComments({
+  static Future<List<Comment>> getComments({
     required int postId,
   }) async {
     final connection = await getConnection();
@@ -495,7 +495,7 @@ class DbConn {
   }
 
   // 공지사항 가져오기
-  static Future<List<NoticePost>> fetchNoticePosts() async {
+  static Future<List<NoticePost>> getNoticePosts() async {
     final connection = await getConnection(); // MySQL 연결
     List<NoticePost> noticePosts = [];
 
@@ -571,7 +571,7 @@ class DbConn {
   }
 
   // 최신 공지사항 가져오기
-  static Future<NoticePost?> fetchLatestNoticePosts() async {
+  static Future<NoticePost?> getLatestNoticePosts() async {
     final connection = await getConnection();
     try {
       final result = await connection.execute(
@@ -599,6 +599,7 @@ class DbConn {
     return null;
   }
 
+  //신고내역을 저장함
   static Future<bool> saveReport({
     required int userId, // 신고된 사용자
     int? reportId, // 게시글 ID
@@ -629,7 +630,41 @@ class DbConn {
     } finally {
       await connection.close();
     }
-
     return success;
   }
+
+  // 신고 내역 가져오기
+  static Future<List<Report>> getReports() async {
+    final connection = await getConnection(); // MySQL 연결
+    List<Report> reports = [];
+
+    try {
+      // reports 테이블에서 데이터를 가져오는 SQL 쿼리 실행
+      final results = await connection.execute('''
+      SELECT id, user_id, report_id, reason, reported_at, type
+      FROM reports
+      ORDER BY reported_at DESC
+    ''');
+
+      // 결과를 반복하며 Report 객체 리스트로 변환
+      for (final row in results.rows) {
+        reports.add(Report(
+          id: int.tryParse(row.assoc()['id'] ?? '0') ?? 0,
+          userId: int.tryParse(row.assoc()['user_id'] ?? '0') ?? 0,
+          reportId: int.tryParse(row.assoc()['report_id'] ?? ''),
+          reason: row.assoc()['reason'] ?? '',
+          reportedAt: row.assoc()['reported_at'] ?? '',
+          type: row.assoc()['type'] ?? '',
+        ));
+      }
+    } catch (e) {
+      print("Error fetching reports: $e");
+    } finally {
+      // 연결 닫기
+      await connection.close();
+    }
+
+    return reports;
+  }
+
 }

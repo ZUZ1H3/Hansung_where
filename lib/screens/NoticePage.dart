@@ -63,7 +63,7 @@ class _NoticePageState extends State<NoticePage> {
 
   Widget _buildNoticePostList() {
     return FutureBuilder<List<NoticePost>>(
-      future: DbConn.fetchNoticePosts(),
+      future: DbConn.getNoticePosts(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());

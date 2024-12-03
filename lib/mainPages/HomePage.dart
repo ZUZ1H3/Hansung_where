@@ -69,8 +69,8 @@ class _HomePageState extends State<HomePage> {
   Widget _buildPostList(String type) {
     return FutureBuilder(
       future: Future.wait([
-        selectedTag == '전체' ? DbConn.fetchLatestNoticePosts() : Future.value(null), // 태그가 전체일 때만 공지사항 가져오기
-        DbConn.fetchPosts(type: type), // 게시물 가져오기
+        selectedTag == '전체' ? DbConn.getLatestNoticePosts() : Future.value(null), // 태그가 전체일 때만 공지사항 가져오기
+        DbConn.getPosts(type: type), // 게시물 가져오기
       ]),
       builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {

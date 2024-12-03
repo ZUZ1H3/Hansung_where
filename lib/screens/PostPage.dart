@@ -104,7 +104,7 @@ class _PostPageState extends State<PostPage> {
     try {
       // 댓글 불러오기
       final fetchedComments =
-          await DbConn.fetchComments(postId: widget.post_id);
+          await DbConn.getComments(postId: widget.post_id);
 
       // 각 댓글에 대해 닉네임을 추가
       for (var comment in fetchedComments) {
