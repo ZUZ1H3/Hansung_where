@@ -368,4 +368,43 @@ class DbConn {
       return '';
     }
   }
+
+  // 사용자가 댓글을 단 게시물 가져오기
+  static Future<List<Post>> fetchPostsWithMyComments(int userId) async {
+    final connection = await getConnection();
+    List<Post> posts = [];
+
+    try {
+      final sql = '''
+    SELECT DISTINCT posts.post_id, posts.title, posts.body, posts.created_at, posts.user_id,
+                    posts.image_url1, posts.place_keyword, posts.thing_keyword
+    FROM posts
+    INNER JOIN comments ON posts.post_id = comments.post_id
+    WHERE comments.user_id = :userId
+    ORDER BY posts.created_at DESC
+    ''';
+
+      final results = await connection.execute(sql, {'userId': userId});
+
+      for (final row in results.rows) {
+        final rawCreatedAt = row.assoc()['created_at'];
+        final relativeTime = _calculateRelativeTime(rawCreatedAt);
+
+        posts.add(Post(
+          postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
+          title: row.assoc()['title'] ?? '',
+          body: row.assoc()['body'] ?? '',
+          createdAt: relativeTime,
+          userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
+          imageUrl1: row.assoc()['image_url1'],
+          place: row.assoc()['place_keyword'],
+          thing: row.assoc()['thing_keyword'],
+        ));
+      }
+    } catch (e) {
+      print('Error fetching posts with comments: $e');
+    }
+
+    return posts;
+  }
 }

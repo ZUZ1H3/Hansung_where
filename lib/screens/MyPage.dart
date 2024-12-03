@@ -331,10 +331,19 @@ class _MyPageState extends State<MyPage> {
                 );
               },
               onTap2: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => MyComment()),
-                );
+                if (studentId != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MyComment(
+                        userId: int.parse(studentId!), // userId 전달
+                        postType: 'found', // postType 전달 (필요에 따라 변경 가능)
+                      ),
+                    ),
+                  );
+                } else {
+                  _showToast("로그인 정보가 없습니다."); // studentId가 없는 경우 메시지 표시
+                }
               },
             ),
             const SizedBox(height: 30),

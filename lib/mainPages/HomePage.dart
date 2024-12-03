@@ -4,6 +4,7 @@ import '../screens/MyPage.dart';
 import '../screens/NotificationPage.dart';
 import '../screens/WritePage.dart';
 import '../LoginPage.dart';
+import '../screens/SearchPage.dart';
 import '../theme/colors.dart';
 import '../PostCard.dart';
 import '../Post.dart';
@@ -222,7 +223,10 @@ class _HomePageState extends State<HomePage> {
                 IconButton(
                   icon: Image.asset('assets/icons/ic_search.png', height: 20),
                   onPressed: () {
-                    print('검색 아이콘 클릭');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SearchPage()),
+                    );
                   },
                 ),
                 IconButton(
