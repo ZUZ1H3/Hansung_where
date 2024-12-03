@@ -651,7 +651,7 @@ class DbConn {
         reports.add(Report(
           id: int.tryParse(row.assoc()['id'] ?? '0') ?? 0,
           userId: int.tryParse(row.assoc()['user_id'] ?? '0') ?? 0,
-          reportId: int.tryParse(row.assoc()['report_id'] ?? ''),
+          reportId: int.parse(row.assoc()['report_id']!),
           reason: row.assoc()['reason'] ?? '',
           reportedAt: row.assoc()['reported_at'] ?? '',
           type: row.assoc()['type'] ?? '',

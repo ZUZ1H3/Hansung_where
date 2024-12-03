@@ -33,7 +33,7 @@ class NoticePostCard extends StatelessWidget {
         );
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
         padding: const EdgeInsets.all(12.0),
         decoration: BoxDecoration(
           color: isForHomePage ? Color(0xFFFFFEE7) : Colors.white, // 노란 배경 (HomePage) 또는 흰 배경 (NoticePage)

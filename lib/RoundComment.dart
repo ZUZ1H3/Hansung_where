@@ -194,8 +194,8 @@ class RoundComment extends StatelessWidget {
       context: context,
       position: RelativeRect.fromLTRB(
         position.dx, // 점 버튼의 x 위치
-        position.dy + renderBox.size.height + 10, // 점 버튼 아래 10px 만큼
-        overlay.size.width - 10,
+        position.dy + renderBox.size.height + 8, // 점 버튼 아래 약간 띄움
+        overlay.size.width - position.dx - renderBox.size.width,
         0,
       ),
       color: Colors.white, // 팝업 배경 흰색
