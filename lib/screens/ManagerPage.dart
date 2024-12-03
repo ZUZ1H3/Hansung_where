@@ -8,7 +8,6 @@ import 'NotificationPage.dart';
 import 'MyPostPage.dart';
 import 'MyCommentPage.dart';
 import 'NoticePage.dart';
-import 'InquiryHistoryPage.dart';
 import 'ReportPage.dart';
 
 class ManagerPage extends StatefulWidget {
@@ -296,19 +295,12 @@ class _ManagerPageState extends State<ManagerPage> {
             const SizedBox(height: 10),
             RoundTwoItems(
               icon1: 'assets/icons/ic_notice.png',
-              icon2: 'assets/icons/ic_inquiry.png',
               icon3: 'assets/icons/ic_report.png',
               icon4: 'assets/icons/ic_logout.png',
               onTap1: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => NoticePage()),
-                );
-              },
-              onTap2: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => InquiryHistoryPage()),
                 );
               },
               onTap3: () {
@@ -416,21 +408,17 @@ class _ManagerPageState extends State<ManagerPage> {
 // 둥근 사각형
 class RoundTwoItems extends StatelessWidget {
   final String icon1;
-  final String icon2;
   final String icon3;
   final String icon4;
   final VoidCallback onTap1;
-  final VoidCallback onTap2;
   final VoidCallback onTap3;
   final VoidCallback onTap4;
 
   const RoundTwoItems({
     required this.icon1,
-    required this.icon2,
     required this.icon3,
     required this.icon4,
     required this.onTap1,
-    required this.onTap2,
     required this.onTap3,
     required this.onTap4,
   });
@@ -438,7 +426,7 @@ class RoundTwoItems extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 200,
+      height: 150,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -450,9 +438,8 @@ class RoundTwoItems extends StatelessWidget {
       child: Stack(
         children: [
           _buildIcon(icon1, 20, 11, onTap1),
-          _buildIcon(icon2, 20, 59, onTap2),
-          _buildIcon(icon3, 20, 59+48, onTap3),
-          _buildIcon(icon4, 20, 59+48*2, onTap4),
+          _buildIcon(icon3, 20, 59, onTap3),
+          _buildIcon(icon4, 20, 59+48, onTap4),
           Positioned(
             left: 18,
             top: 48,
@@ -466,16 +453,6 @@ class RoundTwoItems extends StatelessWidget {
           Positioned(
             left: 18,
             top: 48*2,
-            child: Image.asset(
-              'assets/icons/ic_line.png',
-              width: 300,
-              height: 1,
-              fit: BoxFit.cover,
-            ),
-          ),
-          Positioned(
-            left: 18,
-            top: 48*3,
             child: Image.asset(
               'assets/icons/ic_line.png',
               width: 300,

@@ -14,7 +14,8 @@ class PostPage extends StatefulWidget {
   final int post_id;
   final String type; // type 받을 변수
 
-  const PostPage({required this.post_id, required this.type, Key? key}) : super(key: key);
+  const PostPage({required this.post_id, required this.type, Key? key})
+      : super(key: key);
 
   @override
   _PostPageState createState() => _PostPageState();
@@ -30,7 +31,8 @@ class _PostPageState extends State<PostPage> {
   Color borderColor = ColorStyles.borderGrey;
   List<Comment> comments = [];
   String commentType = 'comment'; // 댓글 Type
-  final TextEditingController _commentController = TextEditingController(); // 댓글 입력 필드 컨트롤러
+  final TextEditingController _commentController =
+      TextEditingController(); // 댓글 입력 필드 컨트롤러
   final FocusNode _focusNode = FocusNode();
   bool hasFocus = false;
   bool replyClicked = false;
@@ -82,7 +84,6 @@ class _PostPageState extends State<PostPage> {
     });
   }
 
-
   Future<Map<String, dynamic>?> _fetchPostData() async {
     try {
       final postData = await DbConn.getPostById(widget.post_id);
@@ -102,7 +103,8 @@ class _PostPageState extends State<PostPage> {
   Future<void> _fetchComments() async {
     try {
       // 댓글 불러오기
-      final fetchedComments = await DbConn.fetchComments(postId: widget.post_id);
+      final fetchedComments =
+          await DbConn.fetchComments(postId: widget.post_id);
 
       // 각 댓글에 대해 닉네임을 추가
       for (var comment in fetchedComments) {
@@ -170,14 +172,16 @@ class _PostPageState extends State<PostPage> {
                         const SizedBox(width: 110),
                         Text(
                           titleText,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(width: 89),
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
-                              context, MaterialPageRoute(
-                                builder: (context) => NotificationPage()),
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => NotificationPage()),
                             );
                           },
                           child: Transform.translate(
@@ -206,7 +210,7 @@ class _PostPageState extends State<PostPage> {
                     ),
                     const SizedBox(height: 20),
                     // 게시글
-                    FutureBuilder<Map<String, dynamic>?> (
+                    FutureBuilder<Map<String, dynamic>?>(
                       future: postFuture,
                       builder: (context, snapshot) {
                         if (!snapshot.hasData || snapshot.data == null) {
@@ -221,9 +225,12 @@ class _PostPageState extends State<PostPage> {
                             DbConn.getNickname(postUserId),
                             DbConn.getProfileId(postUserId),
                           ]),
-                          builder: (context, AsyncSnapshot<List<dynamic>> asyncSnapshot) {
-                            if (asyncSnapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
+                          builder: (context,
+                              AsyncSnapshot<List<dynamic>> asyncSnapshot) {
+                            if (asyncSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
                             }
                             if (asyncSnapshot.hasError) {
                               return const Center(child: Text('오류가 발생했습니다.'));
@@ -239,9 +246,12 @@ class _PostPageState extends State<PostPage> {
                               postId: widget.post_id,
                               title: postData['title'] as String? ?? '제목 없음',
                               body: postData['body'] as String? ?? '내용 없음',
-                              createdAt: postData['created_at'] as String? ?? '',
+                              createdAt:
+                                  postData['created_at'] as String? ?? '',
                               userId: (postData['user_id'] != null)
-                                  ? int.tryParse(postData['user_id'].toString()) ?? 0
+                                  ? int.tryParse(
+                                          postData['user_id'].toString()) ??
+                                      0
                                   : 0,
                               imageUrl1: postData['image_url1'] as String?,
                               imageUrl2: postData['image_url2'] as String?,
@@ -267,34 +277,48 @@ class _PostPageState extends State<PostPage> {
                                 comments.isEmpty
                                     ? Container() // 댓글이 없을 때 빈 공간 표시
                                     : ListView.builder(
-                                  shrinkWrap: true, // ListView가 부모 크기를 초과하지 않도록 제한
-                                  itemCount: comments.length,
-                                  itemBuilder: (context, index) {
-                                    final comment = comments[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.only(bottom: 10), // 댓글들 사이 간격 10
-                                      child: comment.parentCommentId == null
-                                          ? RoundComment(
-                                        nickname: comment.nickname ?? '',
-                                        body: comment.body,
-                                        createdAt: comment.createdAt,
-                                        borderColor: borderColor,
-                                        onReplyClick: () {
-                                          _onReplyClick(comment.commentId);
+                                        shrinkWrap: true,
+                                        // ListView가 부모 크기를 초과하지 않도록 제한
+                                        itemCount: comments.length,
+                                        itemBuilder: (context, index) {
+                                          final comment = comments[index];
+                                          return Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 10), // 댓글들 사이 간격 10
+                                            child: comment.parentCommentId ==
+                                                    null
+                                                ? RoundComment(
+                                                    nickname:
+                                                        comment.nickname ?? '',
+                                                    body: comment.body,
+                                                    createdAt:
+                                                        comment.createdAt,
+                                                    borderColor: borderColor,
+                                                    onReplyClick: () {
+                                                      _onReplyClick(
+                                                          comment.commentId);
+                                                    },
+                                                    userId: studentId,
+                                                    commenterId: comment.userId
+                                                        .toString(),
+                                                    commentId: comment
+                                                        .commentId, // commentId 전달
+                                                  )
+                                                : RoundReply(
+                                                    nickname:
+                                                        comment.nickname ?? '',
+                                                    body: comment.body,
+                                                    createdAt:
+                                                        comment.createdAt,
+                                                    userId: studentId,
+                                                    commenterId: comment.userId
+                                                        .toString(),
+                                                    commentId: comment
+                                                        .commentId, // commentId 전달
+                                                  ),
+                                          );
                                         },
-                                        userId: studentId,
-                                        commenterId: comment.userId.toString(),
-                                      )
-                                          : RoundReply(
-                                        nickname: comment.nickname ?? '',
-                                        body: comment.body,
-                                        createdAt: comment.createdAt,
-                                        userId: studentId,
-                                        commenterId: comment.userId.toString(),
                                       ),
-                                    );
-                                  },
-                                ),
                               ],
                             );
                           },
@@ -332,7 +356,8 @@ class _PostPageState extends State<PostPage> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                             borderSide: BorderSide(
-                              color: ColorStyles.mainBlue, // 클릭(포커스) 시 테두리 색상 변경
+                              color: ColorStyles.mainBlue,
+                              // 클릭(포커스) 시 테두리 색상 변경
                               width: 1.5,
                             ),
                           ),
@@ -367,7 +392,6 @@ class _PostPageState extends State<PostPage> {
   // 댓글 추가 로직
   void _addComment(String body) async {
     try {
-
       bool success = await DbConn.saveComment(
         postId: widget.post_id,
         userId: int.parse(studentId),
@@ -388,17 +412,21 @@ class _PostPageState extends State<PostPage> {
   }
 
   // 팝업 메뉴 표시 로직
-  void _showPopupMenu(BuildContext context, String postUserId, String currentUserId) {
-    if (postUserId == currentUserId) { // 작성자라면
+  void _showPopupMenu(
+      BuildContext context, String postUserId, String currentUserId) {
+    if (postUserId == currentUserId) {
+      // 작성자라면
       _showAuthorPopupMenu(context);
-    } else { // 일반 사용자
+    } else {
+      // 일반 사용자
       _showUserPopupMenu(context);
     }
   }
 
   // 작성자 팝업 메뉴
   void _showAuthorPopupMenu(BuildContext context) async {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
 
     await showMenu(
       context: context,
@@ -408,10 +436,12 @@ class _PostPageState extends State<PostPage> {
         0,
         0, // 아래쪽 여백
       ),
-      color: Colors.white, // 팝업 배경 흰색
+      color: Colors.white,
+      // 팝업 배경 흰색
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10), // 둥근 모서리
-        side: BorderSide( // 테두리 추가
+        side: BorderSide(
+          // 테두리 추가
           color: Color(0xFFC0C0C0),
           width: 1, // 테두리 두께
         ),
@@ -433,7 +463,8 @@ class _PostPageState extends State<PostPage> {
           onTap: () {
             Navigator.pop(context);
             _showToast("함수 추가 예정");
-          }, paddingTop: 8,
+          },
+          paddingTop: 8,
         ),
       ],
     );
@@ -441,7 +472,8 @@ class _PostPageState extends State<PostPage> {
 
   // 사용자 팝업 메뉴
   void _showUserPopupMenu(BuildContext context) async {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
 
     await showMenu(
       context: context,
@@ -451,10 +483,12 @@ class _PostPageState extends State<PostPage> {
         0,
         0, // 아래쪽 여백
       ),
-      color: Colors.white, // 팝업 배경 흰색
+      color: Colors.white,
+      // 팝업 배경 흰색
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10), // 둥근 모서리
-        side: BorderSide( // 테두리 추가
+        side: BorderSide(
+          // 테두리 추가
           color: Color(0xFFC0C0C0),
           width: 1, // 테두리 두께
         ),
@@ -476,7 +510,8 @@ class _PostPageState extends State<PostPage> {
           onTap: () {
             Navigator.pop(context);
             _showReportPopupMenu(context); // 신고하기 메뉴 띄우기
-          }, paddingTop: 8,
+          },
+          paddingTop: 8,
         ),
       ],
     );
@@ -484,7 +519,8 @@ class _PostPageState extends State<PostPage> {
 
   // 신고하기 팝업 메뉴
   void _showReportPopupMenu(BuildContext context) async {
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
 
     await showMenu(
       context: context,
@@ -494,10 +530,12 @@ class _PostPageState extends State<PostPage> {
         0,
         0, // 아래쪽 여백
       ),
-      color: Colors.white, // 팝업 배경 흰색
+      color: Colors.white,
+      // 팝업 배경 흰색
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10), // 둥근 모서리
-        side: BorderSide( // 테두리 추가
+        side: BorderSide(
+          // 테두리 추가
           color: Color(0xFFC0C0C0),
           width: 1, // 테두리 두께
         ),
@@ -510,20 +548,24 @@ class _PostPageState extends State<PostPage> {
             Navigator.pop(context); // 메뉴 닫기
             _showReportDialog(context, userNickname, "불쾌한 콘텐츠 신고");
           },
-        ), _buildDivider(marginTop: 4),
+        ),
+        _buildDivider(marginTop: 4),
         _buildPopupMenuItem(
           text: "게시판 성격에 부적절",
           onTap: () {
             Navigator.pop(context);
             _showReportDialog(context, userNickname, "게시판 성격에 부적절");
-          }, paddingTop: 8,
-        ), _buildDivider(marginTop: 6),
-      _buildPopupMenuItem(
-        text: "욕설/비하",
-        onTap: () {
-          Navigator.pop(context);
-          _showReportDialog(context, userNickname, "욕설/비하");
-          }, paddingTop: 8,
+          },
+          paddingTop: 8,
+        ),
+        _buildDivider(marginTop: 6),
+        _buildPopupMenuItem(
+          text: "욕설/비하",
+          onTap: () {
+            Navigator.pop(context);
+            _showReportDialog(context, userNickname, "욕설/비하");
+          },
+          paddingTop: 8,
         ),
       ],
     );
@@ -554,7 +596,7 @@ class _PostPageState extends State<PostPage> {
   }
 
   // 구분선 아이템을 생성하는 함수
-  PopupMenuItem _buildDivider ({ double marginTop = 2 }) {
+  PopupMenuItem _buildDivider({double marginTop = 2}) {
     return PopupMenuItem(
       padding: EdgeInsets.zero, // 기본 패딩 제거
       height: 1 + marginTop,
@@ -577,17 +619,22 @@ class _PostPageState extends State<PostPage> {
         return AlertDialog(
           backgroundColor: Colors.white,
           contentPadding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-          actionsPadding: EdgeInsets.only(bottom: 10, right: 5), // 버튼 여백 조정
+          actionsPadding: EdgeInsets.only(bottom: 10, right: 5),
+          // 버튼 여백 조정
           title: const Text(
             '신고하기',
-            style: TextStyle(fontSize: 18, color: Colors.black, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                fontSize: 18, color: Colors.black, fontWeight: FontWeight.bold),
           ),
           content: Text.rich(
             TextSpan(
               children: [
                 TextSpan(
                   text: "$nickname", // nickname은 bold로 표시
-                  style: TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold),
                 ),
                 TextSpan(
                   text: ' 이용자를 ', // " 이용자를
@@ -595,7 +642,10 @@ class _PostPageState extends State<PostPage> {
                 ),
                 TextSpan(
                   text: "$reason",
-                  style: TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold),
                 ),
                 TextSpan(
                   text: '로 신고하시겠습니까?',
@@ -609,7 +659,8 @@ class _PostPageState extends State<PostPage> {
               onPressed: () {
                 Navigator.pop(context); // 다이얼로그 닫기
               },
-              child: Text("취소", style: TextStyle(fontSize: 15, color: ColorStyles.darkGrey)),
+              child: Text("취소",
+                  style: TextStyle(fontSize: 15, color: ColorStyles.darkGrey)),
             ),
             TextButton(
               onPressed: () async {
@@ -617,19 +668,21 @@ class _PostPageState extends State<PostPage> {
 
                 // 신고 처리
                 bool success = await DbConn.saveReport(
-                  userId: int.parse(postUserId),  // 로그인된 사용자 ID
-                  postId: widget.post_id,  // 항상 게시물 ID를 사용
-                  commentId: commentId,    // 댓글 ID는 존재할 경우에만 사용
-                  reason: reason,
-                );
-
+                    userId: int.parse(postUserId), // 로그인된 사용자 ID
+                    reportId: widget.post_id, // 항상 게시물 ID를 사용
+                    reason: reason,
+                    type: "post");
                 if (success) {
                   _showToast("신고가 접수되었습니다.");
                 } else {
                   _showToast("신고 처리에 실패했습니다.");
                 }
               },
-              child: Text("확인", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: ColorStyles.mainBlue)),
+              child: Text("확인",
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: ColorStyles.mainBlue)),
             ),
           ],
         );
@@ -645,7 +698,6 @@ class _PostPageState extends State<PostPage> {
         gravity: ToastGravity.BOTTOM,
         backgroundColor: ColorStyles.mainBlue,
         textColor: Colors.white,
-        fontSize: 16
-    );
+        fontSize: 16);
   }
 }

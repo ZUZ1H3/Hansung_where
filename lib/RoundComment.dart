@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'theme/colors.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import '../DbConn.dart';
 
 class RoundComment extends StatelessWidget {
   final String nickname;       // 닉네임
@@ -10,6 +11,7 @@ class RoundComment extends StatelessWidget {
   final Function() onReplyClick; // 댓글 버튼 클릭 시 실행될 함수
   final String userId;         // 사용자 학번
   final String commenterId;    // 작성자 학번
+  final int commentId;
 
   // GlobalKey를 사용하여 점 버튼의 위치를 추적
   final GlobalKey _dotsKey = GlobalKey();
@@ -22,6 +24,7 @@ class RoundComment extends StatelessWidget {
     required this.onReplyClick,
     required this.userId,
     required this.commenterId,
+    required this.commentId
   });
 
   @override
@@ -285,10 +288,20 @@ class RoundComment extends StatelessWidget {
               child: Text("취소", style: TextStyle(fontSize: 15, color: ColorStyles.darkGrey)),
             ),
             TextButton(
-              onPressed: () {
-                if (context.mounted) {
-                  Navigator.pop(context); // 다이얼로그 닫기
-                  _showToast("신고가 접수되었습니다."); // 신고 처리
+              onPressed: () async {
+                Navigator.pop(context); // 다이얼로그 닫기
+
+                // 신고 처리
+                bool success = await DbConn.saveReport(
+                  userId: int.parse(commenterId), // 로그인된 사용자 ID
+                  reportId: commentId, // 항상 게시물 ID를 사용
+                  reason: reason,
+                  type: "comment"
+                );
+                if (success) {
+                  _showToast("신고가 접수되었습니다.");
+                } else {
+                  _showToast("신고 처리에 실패했습니다.");
                 }
               },
               child: Text("확인", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: ColorStyles.mainBlue)),

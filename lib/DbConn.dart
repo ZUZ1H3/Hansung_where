@@ -601,9 +601,9 @@ class DbConn {
 
   static Future<bool> saveReport({
     required int userId, // 신고된 사용자
-    int? postId, // 게시글 ID
-    int? commentId, // 댓글 ID
+    int? reportId, // 게시글 ID
     required String reason, // 신고 사유
+    required String type, // 신고된 유형 ('post', 'comment', 'reply')
   }) async {
     final connection = await getConnection();
     bool success = false;
@@ -612,14 +612,14 @@ class DbConn {
       // 게시글과 댓글 중 하나는 NULL로 저장되므로, 둘 중 하나는 항상 비어있게 됩니다.
       var result = await connection.execute(
         '''
-      INSERT INTO reports (user_id, post_id, comment_id, reason)
-      VALUES (:userId, :postId, :commentId, :reason)
+      INSERT INTO reports (user_id, report_id, reason, type)
+      VALUES (:userId, :reportId, :reason, :type)
       ''',
         {
           'userId': userId,
-          'postId': postId ?? null, // postId는 null 가능
-          'commentId': commentId ?? null, // commentId는 null 가능
+          'reportId': reportId,
           'reason': reason,
+          'type': type
         },
       );
 
