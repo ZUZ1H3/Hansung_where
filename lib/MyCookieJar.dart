@@ -1,3 +1,4 @@
+import 'package:http/http.dart' as http;
 
 class MyCookieJar {
   final Map<Uri, List<String>> _cookies = {};

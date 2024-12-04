@@ -11,6 +11,7 @@ import '../NoticePostCard.dart';
 import '../NoticePost.dart';
 import '../DbConn.dart';
 import '../screens/ManagerPage.dart';
+import '../screens/SearchPage.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -307,7 +308,10 @@ class _HomePageState extends State<HomePage> with RouteAware {
                 IconButton(
                   icon: Image.asset('assets/icons/ic_search.png', height: 20),
                   onPressed: () {
-                    print('검색 아이콘 클릭');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => SearchPage()),
+                    );
                   },
                 ),
                 IconButton(

@@ -427,6 +427,34 @@ class DbConn {
     }
   }
 
+  // 공통 MySQL 실행 유틸리티
+  static Future<List<Map<String, dynamic>>> executeQuery(String query, [
+    Map<String, dynamic>? params,
+  ]) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(query, params ?? {});
+      return result.rows.map((row) => row.assoc()).toList();
+    } catch (e) {
+      print("MySQL Query Error: $e");
+      return [];
+    }
+  }
+
+  // 공통 MySQL 변경 유틸리티
+  static Future<int> executeUpdate(String query, [
+    Map<String, dynamic>? params,
+  ]) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(query, params ?? {});
+      return result.affectedRows.toInt();
+    } catch (e) {
+      print("MySQL Update Error: $e");
+      return 0;
+    }
+  }
+
   // 댓글 저장하기
   static Future<bool> saveComment({
     required int postId,
@@ -658,6 +686,29 @@ class DbConn {
     }
   }
 
+  // 게시물 타입 알아내기
+  static Future<String?> fetchTypeById({required int postId}) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(
+        '''
+          SELECT type 
+          FROM posts 
+          WHERE post_id = ?
+          ''',
+        {'postId': postId},
+      );
+
+      if (result.rows.isNotEmpty) {
+        final row = result.rows.first.assoc();
+        return row['type']; // 예: 'notice', 'blog', 'article' 등의 값
+      }
+    } catch (e) {
+      print('가져오기 실패: $e');
+    }
+    return null;
+  }
+
 
   //신고내역을 저장함
   static Future<bool> saveReport({
@@ -804,7 +855,6 @@ class DbConn {
     }
     return null; // 정지 상태가 없으면 null 반환
   }
-
 
   static Future<bool> updateSuspendStatus(int userId) async {
     final connection = await getConnection();
@@ -992,5 +1042,106 @@ class DbConn {
 
     // 댓글을 그룹화된 형태로 반환
     return messages;
+  }
+  static Future<List<Post>> fetchPostsWithMyComments({
+    required int userId,
+    required String postType,
+  }) async {
+    final connection = await getConnection();
+    List<Post> posts = [];
+
+    try {
+      final query = '''
+    SELECT DISTINCT 
+      p.post_id, 
+      p.title, 
+      p.body, 
+      p.created_at, 
+      p.user_id, 
+      p.image_url1, 
+      p.place_keyword, 
+      p.thing_keyword 
+    FROM 
+      posts p
+    INNER JOIN 
+      comments c ON p.post_id = c.post_id
+    WHERE 
+      c.user_id = :userId 
+      AND p.type = :postType
+    ORDER BY 
+      p.created_at DESC
+    ''';
+
+      final results = await connection.execute(query, {
+        'userId': userId,
+        'postType': postType,
+      });
+
+      for (final row in results.rows) {
+        posts.add(Post(
+          postId: int.parse(row.assoc()['post_id'] ?? '0'),
+          title: row.assoc()['title'] ?? '',
+          body: row.assoc()['body'] ?? '',
+          createdAt: _calculateRelativeTime(row.assoc()['created_at']),
+          userId: int.parse(row.assoc()['user_id'] ?? '0'),
+          imageUrl1: row.assoc()['image_url1'],
+          place: row.assoc()['place_keyword'],
+          thing: row.assoc()['thing_keyword'],
+        ));
+      }
+    } catch (e) {
+      print('Error fetching posts with my comments: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return posts;
+  }
+
+  // DbConn 클래스 내부에 추가
+  static Future<List<String>> getTopSearchKeywords({int limit = 5}) async {
+    final connection = await getConnection();
+    List<String> keywords = [];
+
+    try {
+      final result = await connection.execute(
+        '''
+      SELECT keyword 
+      FROM search_keywords 
+      ORDER BY count DESC 
+      LIMIT :limit
+      ''',
+        {'limit': limit},
+      );
+
+      for (final row in result.rows) {
+        keywords.add(row.assoc()['keyword'] ?? '');
+      }
+    } catch (e) {
+      print('Error fetching top search keywords: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return keywords;
+  }
+
+  static Future<void> saveSearchKeyword(String keyword) async {
+    final connection = await getConnection();
+
+    try {
+      await connection.execute(
+        '''
+      INSERT INTO search_keywords (keyword, count, updated_at) 
+      VALUES (:keyword, 1, NOW()) 
+      ON DUPLICATE KEY UPDATE count = count + 1, updated_at = NOW()
+      ''',
+        {'keyword': keyword},
+      );
+    } catch (e) {
+      print('Error saving search keyword: $e');
+    } finally {
+      await connection.close();
+    }
   }
 }

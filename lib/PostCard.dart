@@ -13,6 +13,7 @@ class PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+      // 클릭 시 PostPage로 이동
       Navigator.push(
         context,
         MaterialPageRoute(
