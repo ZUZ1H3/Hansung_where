@@ -55,8 +55,8 @@ class DbConn {
         // 닉네임 중복 확인
         do {
           final randomNum =
-              (1 + (999 - 1) * (DateTime.now().millisecondsSinceEpoch % 1000))
-                  .toString();
+          (1 + (999 - 1) * (DateTime.now().millisecondsSinceEpoch % 1000))
+              .toString();
           nickname = '부기$randomNum';
           final nicknameResults = await conn.execute(
             'SELECT COUNT(*) AS count FROM users WHERE nickname = :nickname',
@@ -336,10 +336,10 @@ class DbConn {
 
       // 결과가 있다면 한 줄로 반환
       return row.map((key, value) => MapEntry(
-            key,
-            value ??
-                (['title', 'body', 'created_at'].contains(key) ? '' : null),
-          ));
+        key,
+        value ??
+            (['title', 'body', 'created_at'].contains(key) ? '' : null),
+      ));
     } catch (e) {
       print("Error retrieving post: $e");
       return null;
@@ -457,11 +457,11 @@ class DbConn {
       for (final row in result.rows) {
         final rawCreatedAt = row.assoc()['created_at'];
         final formattedCreatedAt =
-            rawCreatedAt != null ? _formatDate(rawCreatedAt) : '';
+        rawCreatedAt != null ? _formatDate(rawCreatedAt) : '';
 
         final comment = Comment(
           commentId:
-              int.tryParse(row.assoc()['comment_id']?.toString() ?? '') ?? 0,
+          int.tryParse(row.assoc()['comment_id']?.toString() ?? '') ?? 0,
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
           body: row.assoc()['body'] ?? '',
@@ -561,9 +561,9 @@ class DbConn {
       }
 
       return row.map((key, value) => MapEntry(
-            key,
-            value ?? '',
-          ));
+        key,
+        value ?? '',
+      ));
     } catch (e) {
       print("Error retrieving notice by ID: $e"); // 디버깅 로그
       return null;
@@ -639,7 +639,7 @@ class DbConn {
     final connection = await getConnection();
     try {
       final result = await connection.execute(
-          '''
+        '''
           SELECT type 
           FROM posts 
           WHERE post_id = ?
