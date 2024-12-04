@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/colors.dart';
 import '../DbConn.dart';
+import '../SenderChat.dart';
+import '../ReceiverChat.dart';
 
 class Chatting extends StatefulWidget {
-  final String receiverNickname; // 메시지를 전달받는 사용자 이름
-  final String postTitle; // 시작된 게시물
+  final String postTitle;
+  final String receiverNickname;
+  final int postId;
+  final int receiverId;
 
   // 생성자를 통해 속성 초기화
   const Chatting(
-      {required this.receiverNickname, required this.postTitle, Key? key})
+      {required this.postTitle, required this.receiverNickname, required this.postId, required this.receiverId, Key? key})
       : super(key: key);
 
   @override
@@ -21,16 +26,27 @@ class _ChattingState extends State<Chatting> {
   bool hasFocus = false;
   bool _isVisble = true;
   final String createdAt = "";
+  late List<Map<String, String>> _chatMessages = []; // 채팅 메시지 저장
+  SharedPreferences? prefs;
+  late String currentUserId; // 현재 접속 중인 사용자 ID
 
   @override
   void initState() {
     super.initState();
     _focusNode.addListener(_onFocusChanged); // 포커스 변화
+    _initPref();
+    _fetchMessages();
     Future.delayed(const Duration(seconds: 2), () {
       setState(() {
         _isVisble = false;
       });
     });
+  }
+
+  // SharedPreferences 초기화
+  Future<void> _initPref() async {
+    prefs = await SharedPreferences.getInstance();
+    currentUserId = prefs?.getString('studentId') ?? "";
   }
 
   @override
@@ -86,9 +102,11 @@ class _ChattingState extends State<Chatting> {
                 ),
                 const SizedBox(height: 30),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20), // 좌우 패딩 추가
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  // 좌우 패딩 추가
                   width: 340,
-                  height: 75, // 박스 높이
+                  height: 75,
+                  // 박스 높이
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
@@ -124,7 +142,8 @@ class _ChattingState extends State<Chatting> {
                 const SizedBox(height: 15),
                 AnimatedSwitcher(
                   duration: const Duration(seconds: 1), // 애니메이션 지속 시간
-                  transitionBuilder: (Widget child, Animation<double> animation) {
+                  transitionBuilder: (Widget child,
+                      Animation<double> animation) {
                     return FadeTransition(opacity: animation, child: child);
                   },
                   child: _isVisble
@@ -132,21 +151,21 @@ class _ChattingState extends State<Chatting> {
                     child: IntrinsicWidth(
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10), // 좌우 10의 패딩 추가
-                        height: 30, // 고정된 높이
+                        height: 30,  // 고정된 높이
                         decoration: BoxDecoration(
                           color: ColorStyles.mainBlue,
-                          borderRadius: BorderRadius.circular(20), // 둥근 모서리
+                          borderRadius: BorderRadius.circular(12), // 둥근 모서리
                         ),
                         child: const Center(
                           child: Text(
-                            "2024.10.12",
+                            "2024.12.05",
                             style: TextStyle(fontSize: 12, color: Colors.white),
                           ),
                         ),
                       ),
                     ),
                   )
-                      : const SizedBox(), // _isVisible이 false면 빈 공간으로 대체
+                      : const SizedBox.shrink(), // 공간을 완전히 없애기
                 ),
               ],
             ),
@@ -154,37 +173,76 @@ class _ChattingState extends State<Chatting> {
           // 채팅 영역
           Expanded(
             child: ListView.builder(
-              itemCount: 20, // 예제 데이터 개수
+              itemCount: _chatMessages.length,
               itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
+                final chat = _chatMessages[index];
+                final isSender = chat['senderId'] == currentUserId;
 
-                );
+                if (isSender) {
+                  // SenderChat
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
+                    child: SenderChat(
+                      message: chat['message'] ?? '',
+                      createdAt: chat['createdAt'] ?? '',
+                    ),
+                  );
+                } else {
+                  // ReceiverChat
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
+                    child: ReceiverChat(
+                      message: chat['message'] ?? '',
+                      createdAt: chat['createdAt'] ?? '',
+                      showProfile: true, // 프로필 표시 여부
+                      profileImage: _getProfileImagePath(widget.receiverId), // 프로필 이미지
+                    ),
+                  );
+                }
               },
             ),
           ),
+
+          // 댓글 입력 필드
           Padding(
             padding: const EdgeInsets.all(10),
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    focusNode: _focusNode,
-                    decoration: InputDecoration(
-                      hintText: '댓글을 입력하세요',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: ColorStyles.borderGrey, // 테두리 색상 설정
-                          width: 1.5,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                          color: ColorStyles.mainBlue, // 클릭(포커스) 시 테두리 색상 변경
-                          width: 1.5,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxHeight: 100, // 최대 높이 설정
+                    ),
+                    child: Scrollbar( // 스크롤바 추가
+                      child: SingleChildScrollView(
+                        child: TextField(
+                          controller: _messageController,
+                          focusNode: _focusNode,
+                          maxLines: null, // null로 설정하면 줄바꿈에 따라 자동으로 늘어남
+                          minLines: 1, // 최소 줄 수
+                          keyboardType: TextInputType.multiline, // 여러 줄 입력 가능
+                          decoration: InputDecoration(
+                            hintText: '댓글을 입력하세요',
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 10,
+                            ), // 텍스트 필드 내부 패딩
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: ColorStyles.borderGrey, // 테두리 색상 설정
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: ColorStyles.mainBlue, // 클릭(포커스) 시 테두리 색상 변경
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                          style: const TextStyle(fontSize: 14), // 텍스트 스타일 설정
                         ),
                       ),
                     ),
@@ -194,7 +252,7 @@ class _ChattingState extends State<Chatting> {
                   onTap: () {
                     String newMessage = _messageController.text.trim();
                     if (newMessage.isNotEmpty) {
-                      // 메시지 처리 로직
+                      _addComment(newMessage);
                       _messageController.clear();
                     }
                   },
@@ -211,5 +269,66 @@ class _ChattingState extends State<Chatting> {
         ],
       ),
     );
+  }
+
+  // 메시지 추가하기
+  void _addComment(String body) async {
+    try {
+      bool success = await DbConn.saveMessage(
+        senderId: int.parse(currentUserId),
+        receiverId: widget.receiverId,
+        postId: widget.postId,
+        message: body,
+      );
+
+      if (success) {
+        _messageController.clear();
+        _fetchMessages();
+        print("댓글 저장 성공");
+      } else {
+        print("댓글 저장 실패");
+      }
+    } catch (e) {
+      print("댓글 저장 오류: \$e");
+    }
+  }
+
+  // 메시지 가져오기
+  Future<void> _fetchMessages() async {
+    try {
+      final fetchedMessages = await DbConn.fetchMessages(postId: widget.postId);
+      print("Fetched messages: ${fetchedMessages}"); // 디버그 출력
+
+      setState(() {
+        _chatMessages = fetchedMessages.map((message) {
+          return {
+            'senderId': message.senderId.toString(),
+            'receiverId': message.receiverId.toString(),
+            'message': message.message,
+            'createdAt': message.createdAt,
+          };
+        }).toList();
+      });
+    } catch (e) {
+      print('채팅 메시지 가져오기 오류: $e');
+    }
+  }
+
+  // 프로필 ID에 따른 이미지 경로 반환
+  String _getProfileImagePath(int profileId) {
+    switch (profileId) {
+      case 1:
+        return 'assets/icons/ic_boogi.png';
+      case 2:
+        return 'assets/icons/ic_kkukku.png';
+      case 3:
+        return 'assets/icons/ic_kkokko.png';
+      case 4:
+        return 'assets/icons/ic_sangzzi.png';
+      case 5:
+        return 'assets/icons/ic_nyang.png';
+      default:
+        return 'assets/icons/ic_boogi.png'; // 기본 이미지
+    }
   }
 }

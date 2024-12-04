@@ -359,29 +359,39 @@ class _PostPageState extends State<PostPage> {
               children: [
                 Expanded(
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: 100,
+                    constraints: const BoxConstraints(
+                      maxHeight: 100, // 최대 높이 설정
                     ),
-                    child: SingleChildScrollView(
-                      child: TextField(
-                        controller: _commentController,
-                        focusNode: _focusNode,
-                        decoration: InputDecoration(
-                          hintText: '댓글을 입력하세요',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(
-                              color: ColorStyles.borderGrey, // 테두리 색상 설정
-                              width: 1.5,
+                    child: Scrollbar( // 스크롤바 추가
+                      child: SingleChildScrollView(
+                        child: TextField(
+                          controller: _commentController,
+                          focusNode: _focusNode,
+                          maxLines: null, // null로 설정하면 줄바꿈에 따라 자동으로 늘어남
+                          minLines: 1, // 최소 줄 수
+                          keyboardType: TextInputType.multiline, // 여러 줄 입력 가능
+                          decoration: InputDecoration(
+                            hintText: '댓글을 입력하세요',
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 10,
+                            ), // 텍스트 필드 내부 패딩
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: ColorStyles.borderGrey, // 테두리 색상 설정
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                color: ColorStyles.mainBlue, // 클릭(포커스) 시 테두리 색상 변경
+                                width: 1.5,
+                              ),
                             ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(
-                              color: ColorStyles.mainBlue, // 클릭(포커스) 시 테두리 색상 변경
-                              width: 1.5,
-                            ),
-                          ),
+                          style: const TextStyle(fontSize: 14), // 텍스트 스타일 설정
                         ),
                       ),
                     ),
@@ -522,6 +532,8 @@ class _PostPageState extends State<PostPage> {
                   builder: (context) => Chatting(
                     receiverNickname: userNickname,
                     postTitle: postTitle,
+                    postId: widget.post_id,
+                    receiverId: int.parse(postUserId),
                   ),
                 ),
               );

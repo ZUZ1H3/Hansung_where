@@ -4,6 +4,7 @@ import 'Post.dart'; // Post 모델 임포트
 import 'Comment.dart';
 import 'NoticePost.dart'; // Post 모델 임포트
 import 'Report.dart';
+import 'Chat.dart';
 
 class DbConn {
   static MySQLConnection? _connection;
@@ -869,6 +870,179 @@ class DbConn {
     return false;
   }
 
+
+  //레포트 내역으로 게시글 type 찾기
+  static Future<String?> fetchTypeByReport({
+    required int reportId,
+    required String reportType,
+  }) async {
+    final connection = await getConnection();
+    try {
+      if (reportType == 'post') {
+        // reportType이 post라면 posts 테이블에서 바로 조회
+        final result = await connection.execute(
+          '''
+        SELECT type 
+        FROM posts 
+        WHERE post_id = :reportId
+        ''',
+          {'reportId': reportId},
+        );
+
+        if (result.rows.isNotEmpty) {
+          final row = result.rows.first.assoc();
+          return row['type'];
+        }
+      } else{
+        // comments 테이블에서 post_id 조회
+        final commentResult = await connection.execute(
+          '''
+        SELECT post_id 
+        FROM comments 
+        WHERE id = :reportId
+        ''',
+          {'reportId': reportId},
+        );
+
+        if (commentResult.rows.isNotEmpty) {
+          final commentRow = commentResult.rows.first.assoc();
+          final int? postId = int.tryParse(commentRow['post_id'] ?? '');
+
+          if (postId != null) {
+            final postResult = await connection.execute(
+              '''
+            SELECT type 
+            FROM posts 
+            WHERE post_id = :postId
+            ''',
+              {'postId': postId},
+            );
+
+            if (postResult.rows.isNotEmpty) {
+              final postRow = postResult.rows.first.assoc();
+              return postRow['type'];
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('테이블에서 type 조회 중 오류 발생: $e');
+    } finally {
+      await connection.close();
+    }
+    return null;
+  }
+
+  //레포트 내역으로 게시글 post_id 찾기
+  static Future<int?> fetchPostIdByReport({
+    required int reportId,
+    required String reportType,
+  }) async {
+    final connection = await getConnection();
+    try {
+      if (reportType == 'post') {
+        return reportId;
+      } else if (reportType == 'comment' || reportType == 'reply') {
+        // comments 테이블에서 post_id 조회
+        final result = await connection.execute(
+          '''
+        SELECT post_id 
+        FROM comments 
+        WHERE comment_id = :reportId
+        ''',
+          {'reportId': reportId},
+        );
+
+        if (result.rows.isNotEmpty) {
+          final row = result.rows.first.assoc();
+          return int.tryParse(row['post_id'] ?? '');
+        }
+      } else {
+        throw Exception("알 수 없는 reportType: $reportType");
+      }
+    } catch (e) {
+      print('postId 조회 중 오류 발생: $e');
+    } finally {
+      await connection.close();
+    }
+    return null; // 데이터가 없으면 null 반환
+  }
+
+
+  // 채팅 메시지 저장하기
+  static Future<bool> saveMessage({
+    required int senderId,
+    required int receiverId,
+    required int postId,
+    required String message,
+  }) async {
+    final connection = await getConnection();
+    try {
+      var result = await connection.execute(
+        '''
+        INSERT INTO messages (sender_id, receiver_id, post_id, message) 
+        VALUES (:senderId, :receiverId, :postId, :message)
+        ''',
+        {
+          'senderId': senderId,
+          'receiverId': receiverId,
+          'postId': postId,
+          'message': message,
+        },
+      );
+
+      return result.affectedRows > BigInt.zero;
+    } catch (e) {
+      print('DB 연결 실패: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return false;
+  }
+
+  // 채팅 메시지 가져오기
+  static Future<List<Message>> fetchMessages({
+    required int postId,
+  }) async {
+    final connection = await getConnection();
+    List<Message> messages = [];
+
+    try {
+      final result = await connection.execute(
+        '''
+      SELECT 
+        message_id,
+        sender_id,
+        post_id,
+        receiver_id,
+        message,
+        DATE_FORMAT(createdAt, '%H:%i') as createdAt
+      FROM messages 
+      WHERE post_id = :postId
+      ''',
+        {'postId': postId},
+      );
+
+      for (final row in result.rows) {
+
+        final message = Message(
+          messageId: int.tryParse(row.assoc()['message_id']?.toString() ?? '') ?? 0,
+          senderId: int.tryParse(row.assoc()['sender_id']?.toString() ?? '') ?? 0,
+          postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
+          receiverId: int.tryParse(row.assoc()['receiver_id']?.toString() ?? '') ?? 0,
+          message: row.assoc()['message'] ?? '',
+          createdAt: row.assoc()['createdAt'] ?? '',
+        );
+        messages.add(message);
+      }
+    } catch (e) {
+      print('채팅 메시지 가져오기 실패: $e');
+    }
+
+    // 댓글을 그룹화된 형태로 반환
+    return messages;
+  }
   static Future<List<Post>> fetchPostsWithMyComments({
     required int userId,
     required String postType,
