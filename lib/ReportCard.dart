@@ -161,9 +161,11 @@ class ReportCard extends StatelessWidget {
 
 
   void _showActionDialog(BuildContext context, String action, String message) {
+    final scaffoldMessenger = ScaffoldMessenger.of(context); // ScaffoldMessenger 인스턴스를 미리 가져오기
+
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) { // 다이얼로그 컨텍스트
         return AlertDialog(
           title: Text(
             action,
@@ -176,7 +178,7 @@ class ReportCard extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // 다이얼로그 닫기
+                Navigator.pop(dialogContext); // 다이얼로그 닫기
               },
               child: const Text(
                 "취소",
@@ -184,14 +186,48 @@ class ReportCard extends StatelessWidget {
               ),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.pop(context); // 다이얼로그 닫기
+              onPressed: () async {
+                Navigator.pop(dialogContext); // 다이얼로그 닫기
+
                 if (action == "3일 정지") {
                   print("유저 3일 정지 처리");
-                  // 3일 정지 로직 추가
+                  try {
+                    final DateTime threeDaysLater = DateTime.now().add(Duration(days: 3)).toUtc();
+
+                    // 3일 정지 처리
+                    bool isSuspended = await DbConn.suspendUser(
+                      userId: report.userId, // 신고된 유저 ID
+                      suspendedUntil: threeDaysLater, // 3일 뒤 시간
+                    );
+
+                    if (isSuspended) {
+                      scaffoldMessenger.showSnackBar(
+                        const SnackBar(content: Text('유저가 3일 정지되었습니다.')),
+                      );
+                    } else {
+                      scaffoldMessenger.showSnackBar(
+                        const SnackBar(content: Text('3일 정지 처리에 실패했습니다.')),
+                      );
+                    }
+                  } catch (e) {
+                    print("3일 정지 중 오류 발생: $e");
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(content: Text('3일 정지 중 오류가 발생했습니다.')),
+                    );
+                  }
                 } else if (action == "삭제하기") {
                   print("신고 삭제 처리");
-                  // 신고 삭제 로직 추가
+                  try {
+                    await DbConn.deleteReportById(reportId: report.reportId); // 신고 삭제
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(content: Text('신고가 삭제되었습니다.')),
+                    );
+                  } catch (e) {
+                    print("삭제 중 오류 발생: $e");
+                    scaffoldMessenger.showSnackBar(
+                      const SnackBar(content: Text('신고 삭제 중 오류가 발생했습니다.')),
+                    );
+                  }
                 }
               },
               child: const Text(
@@ -204,6 +240,7 @@ class ReportCard extends StatelessWidget {
       },
     );
   }
+
 
   PopupMenuItem _buildPopupMenuItem({
     required String text,
@@ -257,11 +294,11 @@ class ReportCard extends StatelessWidget {
   String _getTypeLabel(String type) {
     switch (type) {
       case 'post':
-        return '게시글 신고';
+        return '게시글';
       case 'comment':
-        return '댓글 신고';
+        return '댓글';
       case 'reply':
-        return '답글 신고';
+        return '답글';
       default:
         return '알 수 없음';
     }

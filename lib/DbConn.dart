@@ -4,6 +4,7 @@ import 'Post.dart'; // Post 모델 임포트
 import 'Comment.dart';
 import 'NoticePost.dart'; // Post 모델 임포트
 import 'Report.dart';
+
 class DbConn {
   static MySQLConnection? _connection;
 
@@ -574,14 +575,12 @@ class DbConn {
   static Future<NoticePost?> fetchLatestNoticePosts() async {
     final connection = await getConnection();
     try {
-      final result = await connection.execute(
-          '''
+      final result = await connection.execute('''
       SELECT notice_id, title, body, created_at, manager_id 
       FROM notices 
       ORDER BY created_at DESC 
       LIMIT 1
-      '''
-      );
+      ''');
 
       if (result.rows.isNotEmpty) {
         final row = result.rows.first.assoc();
@@ -616,6 +615,7 @@ class DbConn {
       print('게시물 삭제 오류: $e');
     }
   }
+
   // 댓글 삭제
   static Future<void> deleteCommentById({required int commentId}) async {
     final connection = await getConnection();
@@ -639,7 +639,7 @@ class DbConn {
     final connection = await getConnection();
     try {
       final result = await connection.execute(
-          '''
+        '''
           SELECT type 
           FROM posts 
           WHERE post_id = ?
@@ -656,7 +656,6 @@ class DbConn {
     }
     return null;
   }
-
 
   //신고내역을 저장함
   static Future<bool> saveReport({
@@ -726,4 +725,55 @@ class DbConn {
     return reports;
   }
 
+  // 신고내역 삭제
+  static Future<void> deleteReportById({required int reportId}) async {
+    final connection = await getConnection();
+
+    try {
+      await connection.execute(
+        '''
+      DELETE FROM reports
+      WHERE report_id = :reportId
+      ''',
+        {'reportId': reportId},
+      );
+      print('게시물 삭제 성공');
+    } catch (e) {
+      print('게시물 삭제 오류: $e');
+    }
+  }
+
+  static Future<bool> suspendUser({
+    required int userId,
+    required DateTime suspendedUntil, // 정지 해제 시간
+  }) async {
+    final connection = await getConnection();
+    bool success = false;
+
+    try {
+      print("User ID: $userId");
+      final formattedDate = suspendedUntil.toUtc().toString().split('.').first; // 밀리초 제거
+
+      var result = await connection.execute(
+        '''
+      UPDATE users
+      SET suspended_until = :suspendedUntil
+      WHERE student_id = :userId
+      ''',
+        {
+          'suspendedUntil': formattedDate,
+          'userId': userId,
+        },
+      );
+      print("Suspended Until: ${formattedDate}");
+
+      success = result.affectedRows > BigInt.zero; // 업데이트 성공 여부
+    } catch (e) {
+      print('3일 정지 시간 저장 실패: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return success; // 결과 반환
+  }
 }
