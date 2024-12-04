@@ -61,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<Widget> _pages = [
     MapPage(),
     HomePage(),
-    ChatPage()
+    ChatPage(),
   ];
 
   List<BottomNavigationBarItem> bottomItems = [
@@ -171,13 +171,9 @@ class _MyHomePageState extends State<MyHomePage> {
         showSelectedLabels: false,
         showUnselectedLabels: false,
         onTap: (int index) {
-          if (index == 2) { // 채팅 메뉴 클릭 시
-            _moveChat(); // 로그인 여부에 따라 페이지 이동
-          } else {
-            setState(() {
-              _selectedIndex = index;
-            });
-          }
+          setState(() {
+            _selectedIndex = index; // 페이지 전환
+          });
         },
         items: bottomItems,
       ),
