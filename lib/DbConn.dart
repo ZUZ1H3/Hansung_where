@@ -657,7 +657,6 @@ class DbConn {
     }
   }
 
-
   //신고내역을 저장함
   static Future<bool> saveReport({
     required int userId, // 신고된 사용자
@@ -818,5 +817,104 @@ class DbConn {
     }
     return false;
   }
+
+
+  //레포트 내역으로 게시글 type 찾기
+  static Future<String?> fetchTypeByReport({
+    required int reportId,
+    required String reportType,
+  }) async {
+    final connection = await getConnection();
+    try {
+      if (reportType == 'post') {
+        // reportType이 post라면 posts 테이블에서 바로 조회
+        final result = await connection.execute(
+          '''
+        SELECT type 
+        FROM posts 
+        WHERE post_id = :reportId
+        ''',
+          {'reportId': reportId},
+        );
+
+        if (result.rows.isNotEmpty) {
+          final row = result.rows.first.assoc();
+          return row['type'];
+        }
+      } else{
+        // comments 테이블에서 post_id 조회
+        final commentResult = await connection.execute(
+          '''
+        SELECT post_id 
+        FROM comments 
+        WHERE id = :reportId
+        ''',
+          {'reportId': reportId},
+        );
+
+        if (commentResult.rows.isNotEmpty) {
+          final commentRow = commentResult.rows.first.assoc();
+          final int? postId = int.tryParse(commentRow['post_id'] ?? '');
+
+          if (postId != null) {
+            final postResult = await connection.execute(
+              '''
+            SELECT type 
+            FROM posts 
+            WHERE post_id = :postId
+            ''',
+              {'postId': postId},
+            );
+
+            if (postResult.rows.isNotEmpty) {
+              final postRow = postResult.rows.first.assoc();
+              return postRow['type'];
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('테이블에서 type 조회 중 오류 발생: $e');
+    } finally {
+      await connection.close();
+    }
+    return null;
+  }
+
+  //레포트 내역으로 게시글 post_id 찾기
+  static Future<int?> fetchPostIdByReport({
+    required int reportId,
+    required String reportType,
+  }) async {
+    final connection = await getConnection();
+    try {
+      if (reportType == 'post') {
+        return reportId;
+      } else if (reportType == 'comment' || reportType == 'reply') {
+        // comments 테이블에서 post_id 조회
+        final result = await connection.execute(
+          '''
+        SELECT post_id 
+        FROM comments 
+        WHERE comment_id = :reportId
+        ''',
+          {'reportId': reportId},
+        );
+
+        if (result.rows.isNotEmpty) {
+          final row = result.rows.first.assoc();
+          return int.tryParse(row['post_id'] ?? '');
+        }
+      } else {
+        throw Exception("알 수 없는 reportType: $reportType");
+      }
+    } catch (e) {
+      print('postId 조회 중 오류 발생: $e');
+    } finally {
+      await connection.close();
+    }
+    return null; // 데이터가 없으면 null 반환
+  }
+
 
 }
