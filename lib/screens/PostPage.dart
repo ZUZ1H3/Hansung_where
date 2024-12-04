@@ -9,6 +9,8 @@ import '../RoundComment.dart';
 import '../RoundReply.dart';
 import '../Post.dart';
 import '../Comment.dart';
+import 'WritePage.dart';
+import 'ChattingPage.dart';
 
 class PostPage extends StatefulWidget {
   final int post_id;
@@ -37,7 +39,6 @@ class _PostPageState extends State<PostPage> {
   bool replyClicked = false;
   int? commentId;
   int? selectedCommentId; // 현재 선택된 댓글 ID
-  String postType = "";
 
   @override
   void initState() {
@@ -46,7 +47,6 @@ class _PostPageState extends State<PostPage> {
     _initPref(); // SharedPreferences 초기화
     _fetchComments(); // 댓글 불러오기
     _focusNode.addListener(_onFocusChanged); // 포커스 변화
-    _fetchPostType();
   }
 
   @override
@@ -77,11 +77,9 @@ class _PostPageState extends State<PostPage> {
 
       if (replyClicked) {
         commentType = 'reply';
-        borderColor = ColorStyles.mainBlue;
         this.commentId = commentId;
       } else {
         commentType = 'comment';
-        borderColor = ColorStyles.borderGrey;
         this.commentId = null;
       }
     });
@@ -140,15 +138,6 @@ class _PostPageState extends State<PostPage> {
       await DbConn.deleteCommentById(commentId: commentId);
     } catch(e) {
       print("댓글 삭제 오류: $e");
-    }
-  }
-
-  // 현재 Post의 타입 불러오기
-  Future<void> _fetchPostType() async {
-    try {
-      postType = (await DbConn.fetchTypeById(postId: widget.post_id)).toString();
-    } catch(e) {
-      print("타입 불러오기 오류: $e");
     }
   }
 
@@ -403,7 +392,8 @@ class _PostPageState extends State<PostPage> {
                     String newComment = _commentController.text.trim();
                     if (newComment.isNotEmpty) {
                       _addComment(newComment);
-                      _commentController.clear();
+                      replyClicked = false;
+                      selectedCommentId = null;
                     }
                   },
                   child: Image.asset(
@@ -479,7 +469,7 @@ class _PostPageState extends State<PostPage> {
           text: "편집하기",
           onTap: () {
             Navigator.pop(context); // 메뉴 닫기
-            _showToast("함수 추가 예정");
+            _pushPostIdForEdit();
           },
         ),
         // 구분선
@@ -489,7 +479,7 @@ class _PostPageState extends State<PostPage> {
           text: "삭제하기",
           onTap: () {
             Navigator.pop(context);
-            _showToast("함수 추가 예정");
+            _deletePost(widget.post_id);
           }, paddingTop: 8,
         ),
       ],
@@ -520,9 +510,24 @@ class _PostPageState extends State<PostPage> {
         // "쪽지 보내기"
         _buildPopupMenuItem(
           text: "쪽지 보내기",
-          onTap: () {
-            Navigator.pop(context); // 메뉴 닫기
-            _showToast("함수 추가 예정");
+          onTap: () async {
+            try {
+              // postTitle 불러오기
+              final postTitle = await DbConn.getPostTitleById(postId: widget.post_id) ?? "";
+
+              // Chatting 페이지로 이동하며 데이터 전달
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Chatting(
+                    receiverNickname: userNickname,
+                    postTitle: postTitle,
+                  ),
+                ),
+              );
+            } catch (e) {
+              print("제목 불러오기 오류: $e");
+            }
           },
         ),
         // 구분선
@@ -678,6 +683,19 @@ class _PostPageState extends State<PostPage> {
           ],
         );
       },
+    );
+  }
+
+  // 편집하기
+  void _pushPostIdForEdit() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => WritePage(type: widget.type),
+        settings: RouteSettings(
+          arguments: widget.post_id,  // 전달할 데이터
+        ),
+      ),
     );
   }
 

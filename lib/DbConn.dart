@@ -347,6 +347,31 @@ class DbConn {
     }
   }
 
+  // postId로 게시물 제목 가져오기
+  static Future <String?> getPostTitleById({required int postId}) async {
+    final connection = await getConnection();
+    try {
+      // execute로 SELECT 쿼리 실행
+      final result = await connection.execute(
+        '''
+      SELECT title
+      FROM posts 
+      WHERE post_id = :postId
+      ''',
+        {'postId': postId},
+      );
+
+      if (result.rows.isNotEmpty) {
+        return result.rows.first.assoc()['title']; // 결과를 Map 형태로 추출
+      }
+    } catch (e) {
+      print("제목 추출 실패: $e");
+    } finally {
+      await connection.close(); // 연결 닫기
+    }
+    return null; // 결과가 없을 경우 null 반환
+  }
+
   //공지사항을 저장
   static Future<bool> saveNoticePost({
     required String title,
@@ -410,8 +435,6 @@ class DbConn {
     int? parentCommentId,
   }) async {
     final connection = await getConnection();
-    bool success = false;
-
     try {
       var result = await connection.execute(
         '''
@@ -634,28 +657,6 @@ class DbConn {
     }
   }
 
-  // 게시물 타입 알아내기
-  static Future<String?> fetchTypeById({required int postId}) async {
-    final connection = await getConnection();
-    try {
-      final result = await connection.execute(
-        '''
-          SELECT type 
-          FROM posts 
-          WHERE post_id = ?
-          ''',
-        {'postId': postId},
-      );
-
-      if (result.rows.isNotEmpty) {
-        final row = result.rows.first.assoc();
-        return row['type']; // 예: 'notice', 'blog', 'article' 등의 값
-      }
-    } catch (e) {
-      print('가져오기 실패: $e');
-    }
-    return null;
-  }
 
   //신고내역을 저장함
   static Future<bool> saveReport({

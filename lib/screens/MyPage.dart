@@ -8,6 +8,7 @@ import 'NotificationPage.dart';
 import 'MyPostPage.dart';
 import 'MyCommentPage.dart';
 import 'NotiSettingPage.dart';
+import 'NoticePage.dart';
 
 class MyPage extends StatefulWidget {
   @override
@@ -348,17 +349,24 @@ class _MyPageState extends State<MyPage> {
               ),
             ),
             const SizedBox(height: 10),
-            RoundTwoItems(
-              icon1: 'assets/icons/ic_logout.png',
+            RoundThreeItems(
+              icon1: 'assets/icons/ic_notice.png',
               icon2: 'assets/icons/ic_annosetting.png',
-              onTap1: () async {
-                await logout(); // 로그아웃 수행
+              icon3: 'assets/icons/ic_logout.png',
+              onTap1: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => NoticePage()),
+                );
               },
               onTap2: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => NotiSetting()),
                 );
+              },
+              onTap3: () async {
+                await logout(); // 로그아웃 수행
               },
             ),
           ],
@@ -539,7 +547,7 @@ class RoundTwoItems extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100,
+      height: 96,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -555,6 +563,84 @@ class RoundTwoItems extends StatelessWidget {
           Positioned(
             left: 18,
             top: 48,
+            child: Image.asset(
+              'assets/icons/ic_line.png',
+              width: 300,
+              height: 1,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 아이콘 생성
+  Widget _buildIcon(String icon, double left, double top, VoidCallback onTap) {
+    return Positioned(
+      left: left,
+      top: top,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Image.asset(
+          icon,
+          width: 300,
+          height: 26,
+        ),
+      ),
+    );
+  }
+}
+
+// 둥근 사각형
+class RoundThreeItems extends StatelessWidget {
+  final String icon1;
+  final String icon2;
+  final String icon3;
+  final VoidCallback onTap1;
+  final VoidCallback onTap2;
+  final VoidCallback onTap3;
+
+  const RoundThreeItems({
+    required this.icon1,
+    required this.icon2,
+    required this.icon3,
+    required this.onTap1,
+    required this.onTap2,
+    required this.onTap3,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 340,
+      height: 144,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: Color(0xFFEDEDED),
+          width: 1,
+        ),
+      ),
+      child: Stack(
+        children: [
+          _buildIcon(icon1, 20, 11, onTap1),
+          _buildIcon(icon2, 20, 59, onTap2),
+          _buildIcon(icon3, 20, 107, onTap3),
+          Positioned(
+            left: 18,
+            top: 48,
+            child: Image.asset(
+              'assets/icons/ic_line.png',
+              width: 300,
+              height: 1,
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned(
+            left: 18,
+            top: 96,
             child: Image.asset(
               'assets/icons/ic_line.png',
               width: 300,
