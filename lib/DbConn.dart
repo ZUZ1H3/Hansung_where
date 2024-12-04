@@ -4,6 +4,7 @@ import 'Post.dart'; // Post 모델 임포트
 import 'Comment.dart';
 import 'NoticePost.dart'; // Post 모델 임포트
 import 'Report.dart';
+import 'Chat.dart';
 
 class DbConn {
   static MySQLConnection? _connection;
@@ -819,4 +820,78 @@ class DbConn {
     return false;
   }
 
+  // 채팅 메시지 저장하기
+  static Future<bool> saveMessage({
+    required int senderId,
+    required int receiverId,
+    required int postId,
+    required String message,
+  }) async {
+    final connection = await getConnection();
+    try {
+      var result = await connection.execute(
+        '''
+        INSERT INTO messages (sender_id, receiver_id, post_id, message) 
+        VALUES (:senderId, :receiverId, :postId, :message)
+        ''',
+        {
+          'senderId': senderId,
+          'receiverId': receiverId,
+          'postId': postId,
+          'message': message,
+        },
+      );
+
+      return result.affectedRows > BigInt.zero;
+    } catch (e) {
+      print('DB 연결 실패: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return false;
+  }
+
+  // 채팅 메시지 가져오기
+  static Future<List<Message>> fetchMessages({
+    required int postId,
+  }) async {
+    final connection = await getConnection();
+    List<Message> messages = [];
+
+    try {
+      final result = await connection.execute(
+        '''
+      SELECT 
+        message_id,
+        sender_id,
+        post_id,
+        receiver_id,
+        message,
+        DATE_FORMAT(createdAt, '%H:%i') as createdAt
+      FROM messages 
+      WHERE post_id = :postId
+      ''',
+        {'postId': postId},
+      );
+
+      for (final row in result.rows) {
+
+        final message = Message(
+          messageId: int.tryParse(row.assoc()['message_id']?.toString() ?? '') ?? 0,
+          senderId: int.tryParse(row.assoc()['sender_id']?.toString() ?? '') ?? 0,
+          postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
+          receiverId: int.tryParse(row.assoc()['receiver_id']?.toString() ?? '') ?? 0,
+          message: row.assoc()['message'] ?? '',
+          createdAt: row.assoc()['createdAt'] ?? '',
+        );
+        messages.add(message);
+      }
+    } catch (e) {
+      print('채팅 메시지 가져오기 실패: $e');
+    }
+
+    // 댓글을 그룹화된 형태로 반환
+    return messages;
+  }
 }

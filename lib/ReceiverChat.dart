@@ -7,7 +7,7 @@ class ReceiverChat extends StatelessWidget {
   final bool showProfile;    // 프로필 이미지 표시 여부
   final String profileImage; // 프로필 이미지 경로
 
-  const ReceiverChat({
+  ReceiverChat({
     required this.message,
     required this.createdAt,
     required this.showProfile,
@@ -22,7 +22,7 @@ class ReceiverChat extends StatelessWidget {
         // 프로필 이미지
         if (showProfile)
           CircleAvatar(
-            radius: 36,
+            radius: 18,
             backgroundImage: AssetImage(profileImage),
           )
         else
@@ -33,8 +33,9 @@ class ReceiverChat extends StatelessWidget {
         Flexible(
           child: IntrinsicWidth(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10), // 좌우 10의 패딩 추가
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // 상하좌우 10의 패딩 추가
               constraints: BoxConstraints(
+                maxWidth: 200,
                 minHeight: 30, // 최소 높이 설정
               ),
               decoration: BoxDecoration(
@@ -57,7 +58,7 @@ class ReceiverChat extends StatelessWidget {
 
         // 시간 표시
         Padding(
-          padding: const EdgeInsets.only(left: 8), // 메시지와 시간 간격
+          padding: const EdgeInsets.only(top: 20, left: 2), // 메시지와 시간 간격
           child: Text(
             createdAt, // 메시지 시간
             style: const TextStyle(
