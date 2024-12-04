@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../CustomSearcherBar.dart';
 import 'SearchResultPage.dart';
+import '../DbConn.dart'; // MySQL 연결을 위한 DbConn import
 
 class SearchPage extends StatefulWidget {
   @override
@@ -12,12 +12,12 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   TextEditingController searchController = TextEditingController();
   List<String> recentSearches = []; // 최근 검색어
-  List<String> trendingKeywords = []; // Firestore에서 가져올 실시간 검색어
+  List<String> trendingKeywords = []; // MySQL에서 가져올 실시간 검색어
 
   @override
   void initState() {
     super.initState();
-    fetchTrendingKeywords(); // Firestore에서 실시간 검색어 가져오기
+    fetchTrendingKeywords(); // MySQL에서 실시간 검색어 가져오기
     loadRecentSearches(); // SharedPreferences에서 최근 검색어 로드
   }
 
@@ -36,34 +36,14 @@ class _SearchPageState extends State<SearchPage> {
     prefs.setStringList('recentSearches', recentSearches);
   }
 
-  /// Firestore에서 실시간 검색어 상위 5개 가져오기
+  /// MySQL에서 실시간 검색어 상위 5개 가져오기
   Future<void> fetchTrendingKeywords() async {
-    final firestore = FirebaseFirestore.instance;
-
     try {
-      final querySnapshot = await firestore
-          .collection('search_keywords') // Firestore 컬렉션 이름
-          .orderBy('count', descending: true) // 검색 횟수 기준 내림차순 정렬
-          .limit(5) // 상위 5개만 가져오기
-          .get();
-
-      // Firestore에서 데이터를 성공적으로 가져왔는지 확인
-      if (querySnapshot.docs.isNotEmpty) {
-        final keywords =
-        querySnapshot.docs.map((doc) => doc['keyword'] as String).toList();
-
-        // 상태 업데이트
-        setState(() {
-          trendingKeywords = keywords;
-        });
-
-        print("실시간 검색어 로드 성공: $trendingKeywords");
-      } else {
-        print("실시간 검색어가 없습니다.");
-      }
-
-      // 1시간 후 다시 호출하여 업데이트
-      Future.delayed(Duration(hours: 1), fetchTrendingKeywords);
+      final results = await DbConn.getTopSearchKeywords(limit: 5); // DbConn에서 쿼리 실행
+      setState(() {
+        trendingKeywords = results;
+      });
+      print("실시간 검색어 로드 성공: $trendingKeywords");
     } catch (e) {
       print('실시간 검색어 불러오는 중 오류 발생: $e');
     }
@@ -83,33 +63,12 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  /// Firestore에 검색 키워드 저장
+  /// MySQL에 검색 키워드 저장
   Future<void> saveSearchKeyword(String keyword) async {
     if (keyword.isEmpty) return;
 
-    final firestore = FirebaseFirestore.instance;
-
     try {
-      final docRef = firestore.collection('search_keywords').doc(keyword);
-
-      await firestore.runTransaction((transaction) async {
-        final docSnapshot = await transaction.get(docRef);
-
-        if (docSnapshot.exists) {
-          // 키워드가 이미 존재하면 count 증가
-          transaction.update(docRef, {
-            'count': FieldValue.increment(1),
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
-        } else {
-          // 키워드가 없으면 새로 생성
-          transaction.set(docRef, {
-            'keyword': keyword,
-            'count': 1,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-        }
-      });
+      await DbConn.saveSearchKeyword(keyword); // DbConn 메서드 호출
     } catch (e) {
       print('검색어 저장 중 오류 발생: $e');
     }
@@ -166,6 +125,7 @@ class _SearchPageState extends State<SearchPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF042D6F),
                     shape: RoundedRectangleBorder(
+
                       borderRadius: BorderRadius.circular(20),
                     ),
                     padding: const EdgeInsets.symmetric(

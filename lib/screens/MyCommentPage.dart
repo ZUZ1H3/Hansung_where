@@ -20,7 +20,20 @@ class _MyCommentState extends State<MyComment> {
   void initState() {
     super.initState();
     // 댓글 단 게시물 가져오기
-    _postsFuture = DbConn.fetchPostsWithMyComments(widget.userId);
+    _postsFuture = _fetchPostsWithMyComments();
+  }
+
+  /// 댓글 단 게시물 가져오기
+  Future<List<Post>> _fetchPostsWithMyComments() async {
+    try {
+      return await DbConn.fetchPostsWithMyComments(
+        userId: widget.userId,
+        postType: widget.postType,
+      );
+    } catch (e) {
+      print("Error fetching posts with my comments: $e");
+      return [];
+    }
   }
 
   @override

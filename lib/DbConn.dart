@@ -400,6 +400,57 @@ class DbConn {
     }
   }
 
+  // 공통 MySQL 실행 유틸리티
+  static Future<List<Map<String, dynamic>>> executeQuery(
+      String query, [
+        Map<String, dynamic>? params,
+      ]) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(query, params ?? {});
+      return result.rows.map((row) => row.assoc()).toList();
+    } catch (e) {
+      print("MySQL Query Error: $e");
+      return [];
+    }
+  }
+
+  // 공통 MySQL 변경 유틸리티
+  static Future<int> executeUpdate(
+      String query, [
+        Map<String, dynamic>? params,
+      ]) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(query, params ?? {});
+      return result.affectedRows.toInt();
+    } catch (e) {
+      print("MySQL Update Error: $e");
+      return 0;
+    }
+  }
+  
+  // 실시간 검색어 관리
+  static Future<void> saveSearchKeyword(String keyword) async {
+    final query = '''
+      INSERT INTO search_keywords (keyword, count, updated_at)
+      VALUES (:keyword, 1, NOW())
+      ON DUPLICATE KEY UPDATE count = count + 1, updated_at = NOW()
+    ''';
+    await executeUpdate(query, {'keyword': keyword});
+  }
+
+  static Future<List<String>> getTopSearchKeywords({int limit = 5}) async {
+    final query = '''
+      SELECT keyword 
+      FROM search_keywords 
+      ORDER BY count DESC 
+      LIMIT :limit
+    ''';
+    final results = await executeQuery(query, {'limit': limit});
+    return results.map((row) => row['keyword'] as String).toList();
+  }
+
   // 댓글 저장하기
   static Future<bool> saveComment({
     required int postId,
@@ -726,4 +777,52 @@ class DbConn {
     return reports;
   }
 
+  // 댓글 단 글 가제랴기
+  static Future<List<Post>> fetchPostsWithMyComments({
+    required int userId,
+    String? postType, // 선택적으로 postType 추가
+  }) async {
+    final connection = await getConnection(); // MySQL 연결
+    List<Post> posts = [];
+
+    try {
+      // 댓글 단 게시물 가져오는 SQL 쿼리
+      String sql = '''
+      SELECT DISTINCT p.post_id, p.title, p.body, p.created_at, 
+                      p.user_id, p.image_url1, p.place_keyword, p.thing_keyword
+      FROM posts p
+      INNER JOIN comments c ON p.post_id = c.post_id
+      WHERE c.user_id = :userId
+    ''';
+
+      // postType 필터링 추가
+      if (postType != null) {
+        sql += " AND p.type = :postType";
+      }
+
+      sql += " ORDER BY p.created_at DESC";
+
+      final results = await connection.execute(sql, {
+        'userId': userId,
+        if (postType != null) 'postType': postType,
+      });
+
+      for (final row in results.rows) {
+        posts.add(Post(
+          postId: int.parse(row.assoc()['post_id'] ?? '0'),
+          title: row.assoc()['title'] ?? '',
+          body: row.assoc()['body'] ?? '',
+          createdAt: _calculateRelativeTime(row.assoc()['created_at']),
+          userId: int.parse(row.assoc()['user_id'] ?? '0'),
+          imageUrl1: row.assoc()['image_url1'],
+          place: row.assoc()['place_keyword'],
+          thing: row.assoc()['thing_keyword'],
+        ));
+      }
+    } catch (e) {
+      print("Error fetching posts with my comments: $e");
+    }
+
+    return posts;
+  }
 }

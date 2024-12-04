@@ -4,7 +4,6 @@ import '../screens/MyPage.dart';
 import '../screens/NotificationPage.dart';
 import '../screens/WritePage.dart';
 import '../LoginPage.dart';
-import '../screens/SearchPage.dart';
 import '../theme/colors.dart';
 import '../PostCard.dart';
 import '../Post.dart';
@@ -12,14 +11,14 @@ import '../NoticePostCard.dart';
 import '../NoticePost.dart';
 import '../DbConn.dart';
 import '../screens/ManagerPage.dart';
-
+import '../screens/SearchPage.dart';
 
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with RouteAware {
   final List<String> tags = ['전체', '원스톱', '학식당', '학술정보관', '상상빌리지', '상상파크'];
   String selectedTag = '전체';
   bool isPopupVisible = false; // 팝업 표시 여부
@@ -57,29 +56,45 @@ class _HomePageState extends State<HomePage> {
     Widget targetPage;
 
     if (isLogIn) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => pageType == 'notification' ? NotificationPage() : MyPage(),
-        ),
-      );
+      if (pageType == 'notification') {
+        targetPage = NotificationPage();
+      } else if (pageType == 'manager') {
+        targetPage = ManagerPage();
+      } else {
+        targetPage = MyPage();
+      }
     } else {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+      targetPage = LoginPage();
     }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => targetPage),
+    );
+  }
+
+  // 새로고침
+  Future<void> _refreshPosts() async {
+    setState(() {
+      DbConn.fetchPosts(type: selectedTag);  // 데이터 갱신
+    });
   }
 
   Widget _buildPostList(String type) {
-    return FutureBuilder<List<Post>>(
-      future: DbConn.fetchPosts(type: type),
-      builder: (context, snapshot) {
+    return FutureBuilder(
+      future: Future.wait([
+        selectedTag == '전체' ? DbConn.fetchLatestNoticePosts() : Future.value(null), // 태그가 전체일 때만 공지사항 가져오기
+        DbConn.fetchPosts(type: type), // 게시물 가져오기
+      ]),
+      builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(child: Text('게시물이 없습니다.'));
-        } else {
-          List<Post> posts = snapshot.data!;
+        }
+
+        final noticePost = snapshot.data?[0] as NoticePost?;
+        List<Post> posts = snapshot.data?[1] as List<Post>? ?? [];
 
         // 선택된 태그에 따라 게시글 필터링
         if (selectedTag != '전체') {
@@ -268,6 +283,7 @@ class _HomePageState extends State<HomePage> {
                       _movePage('manager'); // userId가 0이면 ManagerPage로 이동
                     }
                   },
+
                 ),
               ],
               bottom: const TabBar(
