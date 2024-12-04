@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:enableOnBackInvokedCallback="true"
         android:label="찾아부기"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

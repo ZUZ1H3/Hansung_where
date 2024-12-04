@@ -34,6 +34,7 @@ class _MyCommentState extends State<MyComment> {
             const SizedBox(height: 25),
             Row(
               children: [
+                const SizedBox(width: 10),
                 GestureDetector(
                   onTap: () {
                     Navigator.pop(context); // 뒤로 가기

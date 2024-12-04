@@ -52,6 +52,29 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+
+    // 하드코딩된 ID와 비밀번호 처리
+    if (studentId == "0000" && password == "0000") {
+      _showToast("로그인 성공!");
+
+      // 사용자 정보를 DB에 저장
+      await DbConn.saveUser(studentId); // 하드코딩된 ID도 DB에 저장
+
+      // SharedPreferences에 저장
+      prefs?.setString('studentId', studentId);
+      prefs?.setBool('isLogIn', true);
+
+      // 자동 로그인 상태 저장
+      if (_isLoginChecked) {
+        prefs?.setBool('autoLogin', true);
+      } else {
+        prefs?.setBool('autoLogin', false);
+      }
+
+      Navigator.pop(context); // 이전 화면으로 이동
+      return;
+    }
+
     try {
       final cookieJar = MyCookieJar();
       final initialResponse = await http.get(Uri.parse("https://learn.hansung.ac.kr/login/index.php"));

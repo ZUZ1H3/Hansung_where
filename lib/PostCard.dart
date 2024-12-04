@@ -46,6 +46,7 @@ class PostCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontFamily: 'Neo',
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8.0),

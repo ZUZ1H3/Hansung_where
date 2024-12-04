@@ -1,6 +1,8 @@
 import 'package:mysql_client/mysql_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'Post.dart'; // Post 모델 임포트
+import 'Comment.dart';
+import 'NoticePost.dart'; // Post 모델 임포트
 
 class DbConn {
   static MySQLConnection? _connection;
@@ -226,7 +228,7 @@ class DbConn {
     }
   }
 
-  //게시물 저장
+  //게시물 가져오기
   static Future<List<Post>> fetchPosts({
     required String type,
     String? placeKeyword,
@@ -344,7 +346,36 @@ class DbConn {
     }
   }
 
-  /// 날짜를 MM/dd HH:mm 형식으로 포맷
+  //공지사항을 저장
+  static Future<bool> saveNoticePost({
+    required String title,
+    required String body,
+    required int managerId,
+  }) async {
+    final connection = await getConnection();
+    try {
+      // SQL 쿼리 실행
+      final result = await connection.execute(
+        '''
+        INSERT INTO notices (title, body, manager_id) 
+        VALUES (:title, :body, :managerId)
+        ''',
+        {
+          'title': title,
+          'body': body,
+          'managerId': managerId,
+        },
+      );
+
+      // 성공 여부 반환
+      return result.affectedRows > BigInt.zero;
+    } catch (e) {
+      print("Error saving notice post: $e");
+      return false;
+    }
+  }
+
+  // 날짜를 MM/dd HH:mm 형식으로 포맷
   static String _formatDate(dynamic createdAt) {
     if (createdAt == null) return '';
 
@@ -369,42 +400,260 @@ class DbConn {
     }
   }
 
-  // 사용자가 댓글을 단 게시물 가져오기
-  static Future<List<Post>> fetchPostsWithMyComments(int userId) async {
+  // 댓글 저장하기
+  static Future<bool> saveComment({
+    required int postId,
+    required int userId,
+    required String body,
+    required String type,
+    int? parentCommentId,
+  }) async {
     final connection = await getConnection();
-    List<Post> posts = [];
 
     try {
-      final sql = '''
-    SELECT DISTINCT posts.post_id, posts.title, posts.body, posts.created_at, posts.user_id,
-                    posts.image_url1, posts.place_keyword, posts.thing_keyword
-    FROM posts
-    INNER JOIN comments ON posts.post_id = comments.post_id
-    WHERE comments.user_id = :userId
-    ORDER BY posts.created_at DESC
-    ''';
+      var result = await connection.execute(
+        '''
+        INSERT INTO comments (post_id, user_id, body, type, parent_comment_id) 
+        VALUES (:postId, :userId, :body, :type, :parentCommentId)
+        ''',
+        {
+          'postId': postId,
+          'userId': userId,
+          'body': body,
+          'type': type,
+          'parentCommentId': parentCommentId,
+        },
+      );
 
-      final results = await connection.execute(sql, {'userId': userId});
+      return result.affectedRows > BigInt.zero;
+    } catch (e) {
+      print('DB 연결 실패: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return false;
+  }
+
+  // 댓글 가져오기
+  static Future<List<Comment>> fetchComments({
+    required int postId,
+  }) async {
+    final connection = await getConnection();
+    List<Comment> comments = [];
+    Map<int, List<Comment>> groupedComments = {}; // 댓글 그룹화 위한 맵
+
+    try {
+      final result = await connection.execute(
+        '''
+      SELECT *
+      FROM comments 
+      WHERE post_id = :postId
+      ''',
+        {'postId': postId},
+      );
+
+      for (final row in result.rows) {
+        final rawCreatedAt = row.assoc()['created_at'];
+        final formattedCreatedAt =
+            rawCreatedAt != null ? _formatDate(rawCreatedAt) : '';
+
+        final comment = Comment(
+          commentId:
+              int.tryParse(row.assoc()['comment_id']?.toString() ?? '') ?? 0,
+          postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
+          userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
+          body: row.assoc()['body'] ?? '',
+          createdAt: formattedCreatedAt,
+          type: row.assoc()['type'] ?? '',
+          parentCommentId: row.assoc()['parent_comment_id'] != null
+              ? int.tryParse(row.assoc()['parent_comment_id']?.toString() ?? '')
+              : null,
+        );
+
+        // userId로 닉네임을 가져와서 댓글에 추가
+        final nickname = await getNickname(comment.userId.toString());
+        comment.nickname = nickname;
+
+        comments.add(comment);
+
+        // parent_comment_id에 따른 그룹화
+        if (comment.parentCommentId != null) {
+          if (!groupedComments.containsKey(comment.parentCommentId)) {
+            groupedComments[comment.parentCommentId!] = [];
+          }
+          groupedComments[comment.parentCommentId!]!.add(comment);
+        }
+      }
+    } catch (e) {
+      print('Error fetching comments: $e');
+    }
+
+    // 댓글을 그룹화된 형태로 반환
+    return comments;
+  }
+
+  // 공지사항 가져오기
+  static Future<List<NoticePost>> fetchNoticePosts() async {
+    final connection = await getConnection(); // MySQL 연결
+    List<NoticePost> noticePosts = [];
+
+    try {
+      // notices 테이블에서 데이터를 가져오는 SQL 쿼리 실행
+      final results = await connection.execute('''
+      SELECT notice_id, title, body, created_at, manager_id
+      FROM notices
+      ORDER BY created_at DESC
+      ''');
 
       for (final row in results.rows) {
-        final rawCreatedAt = row.assoc()['created_at'];
-        final relativeTime = _calculateRelativeTime(rawCreatedAt);
-
-        posts.add(Post(
-          postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
+        noticePosts.add(NoticePost(
+          noticeId: int.tryParse(row.assoc()['notice_id'] ?? '0') ?? 0,
           title: row.assoc()['title'] ?? '',
           body: row.assoc()['body'] ?? '',
-          createdAt: relativeTime,
-          userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
-          imageUrl1: row.assoc()['image_url1'],
-          place: row.assoc()['place_keyword'],
-          thing: row.assoc()['thing_keyword'],
+          createdAt: _calculateRelativeTime(row.assoc()['created_at']),
+          // 상대 시간으로 변환
+          managerId: int.tryParse(row.assoc()['manager_id'] ?? '0'),
         ));
       }
     } catch (e) {
-      print('Error fetching posts with comments: $e');
+      print("Error fetching notice posts: $e");
     }
 
-    return posts;
+    return noticePosts;
   }
+
+  static Future<Map<String, dynamic>?> getNoticePostById(int noticeId) async {
+    final connection = await getConnection();
+    try {
+      print("Fetching notice with ID: $noticeId"); // 디버깅 로그 추가
+
+      final result = await connection.execute(
+        '''
+      SELECT 
+        n.notice_id,
+        n.title,
+        n.body,
+        n.created_at,
+        u.student_id AS manager_id
+      FROM 
+        notices n
+      LEFT JOIN 
+        users u ON n.manager_id = u.student_id
+      WHERE 
+        n.notice_id = :noticeId
+      ''',
+        {'noticeId': noticeId},
+      );
+
+      if (result.rows.isEmpty) {
+        print('No data found for noticeId: $noticeId'); // 디버깅 로그
+        return null;
+      }
+
+      final row = result.rows.first.assoc();
+
+      print('Fetched row: $row'); // 디버깅 로그
+
+      if (row['created_at'] != null) {
+        row['created_at'] = _formatDate(row['created_at']); // 날짜 포맷팅
+      }
+
+      return row.map((key, value) => MapEntry(
+            key,
+            value ?? '',
+          ));
+    } catch (e) {
+      print("Error retrieving notice by ID: $e"); // 디버깅 로그
+      return null;
+    }
+  }
+
+  // 최신 공지사항 가져오기
+  static Future<NoticePost?> fetchLatestNoticePosts() async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(
+          '''
+      SELECT notice_id, title, body, created_at, manager_id 
+      FROM notices 
+      ORDER BY created_at DESC 
+      LIMIT 1
+      '''
+      );
+
+      if (result.rows.isNotEmpty) {
+        final row = result.rows.first.assoc();
+        return NoticePost(
+          noticeId: int.tryParse(row['notice_id'] ?? '0') ?? 0,
+          title: row['title'] ?? '',
+          body: row['body'] ?? '',
+          createdAt: _calculateRelativeTime(row['created_at']),
+          managerId: int.tryParse(row['manager_id'] ?? '0'),
+        );
+      }
+    } catch (e) {
+      print('Error fetching latest notice: $e');
+    }
+    return null;
+  }
+
+  // 게시물 삭제
+  static Future<void> deletePostById({required int postId}) async {
+    final connection = await getConnection();
+
+    try {
+      await connection.execute(
+        '''
+      DELETE FROM posts
+      WHERE post_id = :postId
+      ''',
+        {'postId': postId},
+      );
+      print('게시물 삭제 성공');
+    } catch (e) {
+      print('게시물 삭제 오류: $e');
+    }
+  }
+  // 댓글 삭제
+  static Future<void> deleteCommentById({required int commentId}) async {
+    final connection = await getConnection();
+
+    try {
+      await connection.execute(
+        '''
+      DELETE FROM comments
+      WHERE comment_id = :commentId
+      ''',
+        {'commentId': commentId},
+      );
+      print('댓글 삭제 성공');
+    } catch (e) {
+      print('댓글 삭제 오류: $e');
+    }
+  }
+
+  // 게시물 타입 알아내기
+  static Future<String?> fetchTypeById({required int postId}) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(
+          '''
+          SELECT type 
+          FROM posts 
+          WHERE post_id = ?
+          ''',
+        {'postId': postId},
+      );
+
+      if (result.rows.isNotEmpty) {
+        final row = result.rows.first.assoc();
+        return row['type']; // 예: 'notice', 'blog', 'article' 등의 값
+      }
+    } catch (e) {
+      print('가져오기 실패: $e');
+    }
+    return null;
+  }
+
 }

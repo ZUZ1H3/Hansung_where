@@ -8,7 +8,11 @@ import '../screens/SearchPage.dart';
 import '../theme/colors.dart';
 import '../PostCard.dart';
 import '../Post.dart';
+import '../NoticePostCard.dart';
+import '../NoticePost.dart';
 import '../DbConn.dart';
+import '../screens/ManagerPage.dart';
+
 
 class HomePage extends StatefulWidget {
   @override
@@ -25,6 +29,14 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _initPrefs(); // SharedPreferences 초기화
+    _refreshPosts();
+  }
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // 화면이 돌아올 때 새로고침
+    _refreshPosts();
   }
 
   Future<void> _initPrefs() async {
@@ -32,9 +44,17 @@ class _HomePageState extends State<HomePage> {
     setState(() {}); // 초기화 후 상태 갱신
   }
 
+  //userId를 가져옴
+  Future<int> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final studentId = prefs.getString('studentId');
+    return int.tryParse(studentId ?? '') ?? 0; // 기본값 설정
+  }
+
   Future<void> _movePage(String pageType) async {
     if (prefs == null) return; // prefs 초기화 확인
     final isLogIn = prefs!.getBool('isLogIn') ?? false;
+    Widget targetPage;
 
     if (isLogIn) {
       Navigator.push(
@@ -61,35 +81,38 @@ class _HomePageState extends State<HomePage> {
         } else {
           List<Post> posts = snapshot.data!;
 
-          // 선택된 태그에 따라 게시글 필터링
-          if (selectedTag != '전체') {
-            posts = posts.where((post) => post.place == selectedTag).toList();
-          }
-
-          if (posts.isEmpty) {
-            return const Center(child: Text('해당 장소의 게시물이 없습니다.'));
-          }
-
-          return ListView.builder(
-            itemCount: posts.length,
-            itemBuilder: (context, index) {
-              return PostCard(
-                post: posts[index],
-                type: type,
-              );
-            },
-          );
+        // 선택된 태그에 따라 게시글 필터링
+        if (selectedTag != '전체') {
+          posts = posts.where((post) => post.place == selectedTag).toList();
         }
+
+        if (noticePost == null && posts.isEmpty) {
+          return const Center(child: Text('게시물이 없습니다.'));
+        }
+
+        return ListView.builder(
+          itemCount: (noticePost != null ? 1 : 0) + posts.length,
+          itemBuilder: (context, index) {
+            if (index == 0 && noticePost != null) {
+              return NoticePostCard(
+                noticePost: noticePost,
+                showTitle: true,
+                isForHomePage: true,
+              );
+
+            }
+
+            // 이후 게시글 표시
+            return PostCard(
+              post: posts[index - (noticePost != null ? 1 : 0)],
+              type: type,
+            );
+          },
+        );
       },
     );
   }
 
-
-  Widget _buildTabBarView(List<String> types) {
-    return TabBarView(
-      children: types.map((type) => _buildPostList(type)).toList(),
-    );
-  }
 
   Widget _buildTag(String tag, bool isSelected) {
     return GestureDetector(
@@ -237,8 +260,13 @@ class _HomePageState extends State<HomePage> {
                 ),
                 IconButton(
                   icon: Image.asset('assets/icons/ic_user.png', height: 20),
-                  onPressed: () {
-                    _movePage('user');
+                  onPressed: () async {
+                    final userId = await getUserId(); // 비동기로 userId 가져오기
+                    if (userId != 0) {
+                      _movePage('user'); // userId가 0이 아니면 MyPage로 이동
+                    } else {
+                      _movePage('manager'); // userId가 0이면 ManagerPage로 이동
+                    }
                   },
                 ),
               ],
@@ -269,8 +297,15 @@ class _HomePageState extends State<HomePage> {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      _buildPostList('found'), // 습득물
-                      _buildPostList('lost'),  // 분실물
+                      // 당길 때 새로고침 기능 추가
+                      RefreshIndicator(
+                        onRefresh: _refreshPosts,
+                        child: _buildPostList('found'), // 습득물
+                      ),
+                      RefreshIndicator(
+                        onRefresh: _refreshPosts,
+                        child: _buildPostList('lost'),  // 분실물
+                      ),
                     ],
                   ),                ),
               ],
