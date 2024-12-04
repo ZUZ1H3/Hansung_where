@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'Post.dart'; // Post 모델 임포트
 import 'Comment.dart';
 import 'NoticePost.dart'; // Post 모델 임포트
-
+import 'Report.dart';
 class DbConn {
   static MySQLConnection? _connection;
 
@@ -409,6 +409,7 @@ class DbConn {
     int? parentCommentId,
   }) async {
     final connection = await getConnection();
+    bool success = false;
 
     try {
       var result = await connection.execute(
@@ -654,6 +655,75 @@ class DbConn {
       print('가져오기 실패: $e');
     }
     return null;
+  }
+
+
+  //신고내역을 저장함
+  static Future<bool> saveReport({
+    required int userId, // 신고된 사용자
+    int? reportId, // 게시글 ID
+    required String reason, // 신고 사유
+    required String type, // 신고된 유형 ('post', 'comment', 'reply')
+  }) async {
+    final connection = await getConnection();
+    bool success = false;
+
+    try {
+      // 게시글과 댓글 중 하나는 NULL로 저장되므로, 둘 중 하나는 항상 비어있게 됩니다.
+      var result = await connection.execute(
+        '''
+      INSERT INTO reports (user_id, report_id, reason, type)
+      VALUES (:userId, :reportId, :reason, :type)
+      ''',
+        {
+          'userId': userId,
+          'reportId': reportId,
+          'reason': reason,
+          'type': type
+        },
+      );
+
+      success = result.affectedRows > BigInt.zero;
+    } catch (e) {
+      print('DB 연결 실패: $e');
+    } finally {
+      await connection.close();
+    }
+    return success;
+  }
+
+  // 신고 내역 가져오기
+  static Future<List<Report>> getReports() async {
+    final connection = await getConnection(); // MySQL 연결
+    List<Report> reports = [];
+
+    try {
+      // reports 테이블에서 데이터를 가져오는 SQL 쿼리 실행
+      final results = await connection.execute('''
+      SELECT id, user_id, report_id, reason, reported_at, type
+      FROM reports
+      ORDER BY reported_at DESC
+    ''');
+
+      // 결과를 반복하며 Report 객체 리스트로 변환
+      for (final row in results.rows) {
+        reports.add(Report(
+          id: int.tryParse(row.assoc()['id'] ?? '0') ?? 0,
+          userId: int.tryParse(row.assoc()['user_id'] ?? '0') ?? 0,
+          reportId: int.parse(row.assoc()['report_id']!),
+          reason: row.assoc()['reason'] ?? '',
+          reportedAt: row.assoc()['reported_at'] ?? '',
+          type: row.assoc()['type'] ?? '',
+        ));
+      }
+    } catch (e) {
+      print("Error fetching reports: $e");
+    } finally {
+      // 연결 닫기
+      await connection.close();
+    }
+
+    return reports;
   }
 
 }

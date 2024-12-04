@@ -68,7 +68,7 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  Future<List<Post>> _fetchPostsByPlace(String place) async {
+  Future<List<Post>> _getPostsByPlace(String place) async {
     return await DbConn.fetchPosts(type: 'found', placeKeyword: place);
   }
 
@@ -198,7 +198,7 @@ class _MapPageState extends State<MapPage> {
                             ),
                             Expanded(
                               child: FutureBuilder<List<Post>>(
-                                future: _fetchPostsByPlace(selectedPlace ?? ''),
+                                future: _getPostsByPlace(selectedPlace ?? ''),
                                 builder: (context, snapshot) {
                                   if (snapshot.connectionState ==
                                       ConnectionState.waiting) {

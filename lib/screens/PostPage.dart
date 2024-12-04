@@ -9,13 +9,13 @@ import '../RoundComment.dart';
 import '../RoundReply.dart';
 import '../Post.dart';
 import '../Comment.dart';
-import 'WritePage.dart';
 
 class PostPage extends StatefulWidget {
   final int post_id;
   final String type; // type 받을 변수
 
-  const PostPage({required this.post_id, required this.type, Key? key}) : super(key: key);
+  const PostPage({required this.post_id, required this.type, Key? key})
+      : super(key: key);
 
   @override
   _PostPageState createState() => _PostPageState();
@@ -62,6 +62,13 @@ class _PostPageState extends State<PostPage> {
     });
   }
 
+  //userId를 가져옴
+  Future<int> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final studentId = prefs.getString('studentId');
+    return int.tryParse(studentId ?? '') ?? 0; // 기본값 설정
+  }
+
   // 답글 클릭 시 외곽선 색상 변경
   void _onReplyClick(int commentId) {
     setState(() {
@@ -70,9 +77,11 @@ class _PostPageState extends State<PostPage> {
 
       if (replyClicked) {
         commentType = 'reply';
+        borderColor = ColorStyles.mainBlue;
         this.commentId = commentId;
       } else {
         commentType = 'comment';
+        borderColor = ColorStyles.borderGrey;
         this.commentId = null;
       }
     });
@@ -248,9 +257,12 @@ class _PostPageState extends State<PostPage> {
                             DbConn.getNickname(postUserId),
                             DbConn.getProfileId(postUserId),
                           ]),
-                          builder: (context, AsyncSnapshot<List<dynamic>> asyncSnapshot) {
-                            if (asyncSnapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
+                          builder: (context,
+                              AsyncSnapshot<List<dynamic>> asyncSnapshot) {
+                            if (asyncSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
                             }
                             if (asyncSnapshot.hasError) {
                               return const Center(child: Text('오류가 발생했습니다.'));
@@ -391,8 +403,7 @@ class _PostPageState extends State<PostPage> {
                     String newComment = _commentController.text.trim();
                     if (newComment.isNotEmpty) {
                       _addComment(newComment);
-                      replyClicked = false;
-                      selectedCommentId = null;
+                      _commentController.clear();
                     }
                   },
                   child: Image.asset(
@@ -468,7 +479,6 @@ class _PostPageState extends State<PostPage> {
           text: "편집하기",
           onTap: () {
             Navigator.pop(context); // 메뉴 닫기
-            _pushPostIdForEdit();
             _showToast("함수 추가 예정");
           },
         ),
@@ -479,12 +489,13 @@ class _PostPageState extends State<PostPage> {
           text: "삭제하기",
           onTap: () {
             Navigator.pop(context);
-            _deletePost(widget.post_id);
+            _showToast("함수 추가 예정");
           }, paddingTop: 8,
         ),
       ],
     );
   }
+
   // 사용자 팝업 메뉴
   void _showUserPopupMenu(BuildContext context) async {
     final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
@@ -668,20 +679,6 @@ class _PostPageState extends State<PostPage> {
         );
       },
     );
-  }
-
-  // 편집하기 함수
-  void _pushPostIdForEdit() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => WritePage(type: postType),
-        settings: RouteSettings(
-          arguments: widget.post_id,  // 전달할 데이터
-        ),
-      ),
-    );
-
   }
 
   // Toast 메시지 표시 함수

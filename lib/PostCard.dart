@@ -25,7 +25,7 @@ class PostCard extends StatelessWidget {
       );
       },
     child: Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      margin: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
       padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
         color: Colors.white, // 카드 배경을 흰색으로 설정
@@ -67,7 +67,7 @@ class PostCard extends StatelessWidget {
                 Text(
                   '${post.createdAt} | 학생',
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: Colors.grey,
                     fontFamily: 'Neo',
                   ),
@@ -99,7 +99,7 @@ class PostCard extends StatelessWidget {
   /// 태그 스타일
   Widget _buildTag(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       decoration: BoxDecoration(
         color: const Color(0xFFECECEC), // 태그 배경색
         borderRadius: BorderRadius.circular(50), // 완전한 원형 모양
