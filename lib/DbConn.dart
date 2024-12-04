@@ -4,6 +4,7 @@ import 'Post.dart'; // Post 모델 임포트
 import 'Comment.dart';
 import 'NoticePost.dart'; // Post 모델 임포트
 import 'Report.dart';
+
 class DbConn {
   static MySQLConnection? _connection;
 
@@ -55,8 +56,8 @@ class DbConn {
         // 닉네임 중복 확인
         do {
           final randomNum =
-          (1 + (999 - 1) * (DateTime.now().millisecondsSinceEpoch % 1000))
-              .toString();
+              (1 + (999 - 1) * (DateTime.now().millisecondsSinceEpoch % 1000))
+                  .toString();
           nickname = '부기$randomNum';
           final nicknameResults = await conn.execute(
             'SELECT COUNT(*) AS count FROM users WHERE nickname = :nickname',
@@ -336,14 +337,39 @@ class DbConn {
 
       // 결과가 있다면 한 줄로 반환
       return row.map((key, value) => MapEntry(
-        key,
-        value ??
-            (['title', 'body', 'created_at'].contains(key) ? '' : null),
-      ));
+            key,
+            value ??
+                (['title', 'body', 'created_at'].contains(key) ? '' : null),
+          ));
     } catch (e) {
       print("Error retrieving post: $e");
       return null;
     }
+  }
+
+  // postId로 게시물 제목 가져오기
+  static Future <String?> getPostTitleById({required int postId}) async {
+    final connection = await getConnection();
+    try {
+      // execute로 SELECT 쿼리 실행
+      final result = await connection.execute(
+        '''
+      SELECT title
+      FROM posts 
+      WHERE post_id = :postId
+      ''',
+        {'postId': postId},
+      );
+
+      if (result.rows.isNotEmpty) {
+        return result.rows.first.assoc()['title']; // 결과를 Map 형태로 추출
+      }
+    } catch (e) {
+      print("제목 추출 실패: $e");
+    } finally {
+      await connection.close(); // 연결 닫기
+    }
+    return null; // 결과가 없을 경우 null 반환
   }
 
   //공지사항을 저장
@@ -460,8 +486,6 @@ class DbConn {
     int? parentCommentId,
   }) async {
     final connection = await getConnection();
-    bool success = false;
-
     try {
       var result = await connection.execute(
         '''
@@ -508,11 +532,11 @@ class DbConn {
       for (final row in result.rows) {
         final rawCreatedAt = row.assoc()['created_at'];
         final formattedCreatedAt =
-        rawCreatedAt != null ? _formatDate(rawCreatedAt) : '';
+            rawCreatedAt != null ? _formatDate(rawCreatedAt) : '';
 
         final comment = Comment(
           commentId:
-          int.tryParse(row.assoc()['comment_id']?.toString() ?? '') ?? 0,
+              int.tryParse(row.assoc()['comment_id']?.toString() ?? '') ?? 0,
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
           body: row.assoc()['body'] ?? '',
@@ -612,9 +636,9 @@ class DbConn {
       }
 
       return row.map((key, value) => MapEntry(
-        key,
-        value ?? '',
-      ));
+            key,
+            value ?? '',
+          ));
     } catch (e) {
       print("Error retrieving notice by ID: $e"); // 디버깅 로그
       return null;
@@ -625,14 +649,12 @@ class DbConn {
   static Future<NoticePost?> fetchLatestNoticePosts() async {
     final connection = await getConnection();
     try {
-      final result = await connection.execute(
-          '''
+      final result = await connection.execute('''
       SELECT notice_id, title, body, created_at, manager_id 
       FROM notices 
       ORDER BY created_at DESC 
       LIMIT 1
-      '''
-      );
+      ''');
 
       if (result.rows.isNotEmpty) {
         final row = result.rows.first.assoc();
@@ -667,6 +689,7 @@ class DbConn {
       print('게시물 삭제 오류: $e');
     }
   }
+
   // 댓글 삭제
   static Future<void> deleteCommentById({required int commentId}) async {
     final connection = await getConnection();
@@ -777,52 +800,55 @@ class DbConn {
     return reports;
   }
 
-  // 댓글 단 글 가제랴기
-  static Future<List<Post>> fetchPostsWithMyComments({
-    required int userId,
-    String? postType, // 선택적으로 postType 추가
-  }) async {
-    final connection = await getConnection(); // MySQL 연결
-    List<Post> posts = [];
+  // 신고내역 삭제
+  static Future<void> deleteReportById({required int reportId}) async {
+    final connection = await getConnection();
 
     try {
-      // 댓글 단 게시물 가져오는 SQL 쿼리
-      String sql = '''
-      SELECT DISTINCT p.post_id, p.title, p.body, p.created_at, 
-                      p.user_id, p.image_url1, p.place_keyword, p.thing_keyword
-      FROM posts p
-      INNER JOIN comments c ON p.post_id = c.post_id
-      WHERE c.user_id = :userId
-    ''';
-
-      // postType 필터링 추가
-      if (postType != null) {
-        sql += " AND p.type = :postType";
-      }
-
-      sql += " ORDER BY p.created_at DESC";
-
-      final results = await connection.execute(sql, {
-        'userId': userId,
-        if (postType != null) 'postType': postType,
-      });
-
-      for (final row in results.rows) {
-        posts.add(Post(
-          postId: int.parse(row.assoc()['post_id'] ?? '0'),
-          title: row.assoc()['title'] ?? '',
-          body: row.assoc()['body'] ?? '',
-          createdAt: _calculateRelativeTime(row.assoc()['created_at']),
-          userId: int.parse(row.assoc()['user_id'] ?? '0'),
-          imageUrl1: row.assoc()['image_url1'],
-          place: row.assoc()['place_keyword'],
-          thing: row.assoc()['thing_keyword'],
-        ));
-      }
+      await connection.execute(
+        '''
+      DELETE FROM reports
+      WHERE report_id = :reportId
+      ''',
+        {'reportId': reportId},
+      );
+      print('게시물 삭제 성공');
     } catch (e) {
-      print("Error fetching posts with my comments: $e");
+      print('게시물 삭제 오류: $e');
+    }
+  }
+
+  static Future<bool> suspendUser({
+    required int userId,
+    required DateTime suspendedUntil, // 정지 해제 시간
+  }) async {
+    final connection = await getConnection();
+    bool success = false;
+
+    try {
+      print("User ID: $userId");
+      final formattedDate = suspendedUntil.toUtc().toString().split('.').first; // 밀리초 제거
+
+      var result = await connection.execute(
+        '''
+      UPDATE users
+      SET suspended_until = :suspendedUntil
+      WHERE student_id = :userId
+      ''',
+        {
+          'suspendedUntil': formattedDate,
+          'userId': userId,
+        },
+      );
+      print("Suspended Until: ${formattedDate}");
+
+      success = result.affectedRows > BigInt.zero; // 업데이트 성공 여부
+    } catch (e) {
+      print('3일 정지 시간 저장 실패: $e');
+    } finally {
+      await connection.close();
     }
 
-    return posts;
+    return success; // 결과 반환
   }
 }

@@ -26,7 +26,7 @@ class _WritePageState extends State<WritePage> {
   Future<int> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     final studentId = prefs.getString('studentId');
-    return int.tryParse(studentId ?? '') ?? 2211062; // 기본값 설정
+    return int.tryParse(studentId ?? '') ?? -1; // 기본값 설정
   }
 
   /// 이미지 선택
