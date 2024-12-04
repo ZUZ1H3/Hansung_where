@@ -855,7 +855,6 @@ class DbConn {
     return null; // 정지 상태가 없으면 null 반환
   }
 
-
   static Future<bool> updateSuspendStatus(int userId) async {
     final connection = await getConnection();
     try {
@@ -870,4 +869,105 @@ class DbConn {
     return false;
   }
 
+  static Future<List<Post>> fetchPostsWithMyComments({
+    required int userId,
+    required String postType,
+  }) async {
+    final connection = await getConnection();
+    List<Post> posts = [];
+
+    try {
+      final query = '''
+    SELECT DISTINCT 
+      p.post_id, 
+      p.title, 
+      p.body, 
+      p.created_at, 
+      p.user_id, 
+      p.image_url1, 
+      p.place_keyword, 
+      p.thing_keyword 
+    FROM 
+      posts p
+    INNER JOIN 
+      comments c ON p.post_id = c.post_id
+    WHERE 
+      c.user_id = :userId 
+      AND p.type = :postType
+    ORDER BY 
+      p.created_at DESC
+    ''';
+
+      final results = await connection.execute(query, {
+        'userId': userId,
+        'postType': postType,
+      });
+
+      for (final row in results.rows) {
+        posts.add(Post(
+          postId: int.parse(row.assoc()['post_id'] ?? '0'),
+          title: row.assoc()['title'] ?? '',
+          body: row.assoc()['body'] ?? '',
+          createdAt: _calculateRelativeTime(row.assoc()['created_at']),
+          userId: int.parse(row.assoc()['user_id'] ?? '0'),
+          imageUrl1: row.assoc()['image_url1'],
+          place: row.assoc()['place_keyword'],
+          thing: row.assoc()['thing_keyword'],
+        ));
+      }
+    } catch (e) {
+      print('Error fetching posts with my comments: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return posts;
+  }
+
+  // DbConn 클래스 내부에 추가
+  static Future<List<String>> getTopSearchKeywords({int limit = 5}) async {
+    final connection = await getConnection();
+    List<String> keywords = [];
+
+    try {
+      final result = await connection.execute(
+        '''
+      SELECT keyword 
+      FROM search_keywords 
+      ORDER BY count DESC 
+      LIMIT :limit
+      ''',
+        {'limit': limit},
+      );
+
+      for (final row in result.rows) {
+        keywords.add(row.assoc()['keyword'] ?? '');
+      }
+    } catch (e) {
+      print('Error fetching top search keywords: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return keywords;
+  }
+
+  static Future<void> saveSearchKeyword(String keyword) async {
+    final connection = await getConnection();
+
+    try {
+      await connection.execute(
+        '''
+      INSERT INTO search_keywords (keyword, count, updated_at) 
+      VALUES (:keyword, 1, NOW()) 
+      ON DUPLICATE KEY UPDATE count = count + 1, updated_at = NOW()
+      ''',
+        {'keyword': keyword},
+      );
+    } catch (e) {
+      print('Error saving search keyword: $e');
+    } finally {
+      await connection.close();
+    }
+  }
 }
