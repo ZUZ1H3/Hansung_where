@@ -8,7 +8,7 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   bool isDrawerOpen = false; // 서랍 상태를 관리하는 변수
   String? selectedChat; // 선택된 채팅
-  final List<Map<String, dynamic>> chatList = [
+  final List<Map<String, dynamic>> chatList = [ // 화면 미리 보기
     {'name': '분홍샌들의치타', 'message': '제 바람막이 어디있어요?', 'unreadCount': 3},
     {'name': '고구마붕어빵', 'message': '미래관 지하에서 본 것 같아요!', 'unreadCount': 1},
     {'name': '민들레복숭아', 'message': '좋은 하루 보내세요', 'unreadCount': 0},
