@@ -744,6 +744,7 @@ class DbConn {
     }
   }
 
+  //3일 정지 부여
   static Future<bool> suspendUser({
     required int userId,
     required DateTime suspendedUntil, // 정지 해제 시간
@@ -777,4 +778,45 @@ class DbConn {
 
     return success; // 결과 반환
   }
+
+  //정지 여부
+  static Future<String?> getUserSuspensionStatus(int userId) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(
+        '''
+      SELECT suspended_until 
+      FROM users 
+      WHERE student_id = :userId
+      ''',
+        {'userId': userId}, // 현재 로그인한 사용자 ID
+      );
+
+      if (result.rows.isNotEmpty) {
+        final row = result.rows.first.assoc();
+        return row['suspended_until']; // 정지 상태가 있으면 반환
+      }
+    } catch (e) {
+      print('정지 상태 확인 중 오류 발생: $e');
+    } finally {
+      await connection.close();
+    }
+    return null; // 정지 상태가 없으면 null 반환
+  }
+
+
+  static Future<bool> updateSuspendStatus(int userId) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(
+        '''UPDATE users SET suspended_until = NULL WHERE student_id = :userId''',
+        {'userId': userId},
+      );
+      return result.affectedRows > BigInt.zero;
+    } catch (e) {
+      print("Error updating suspend_status: $e");
+    }
+    return false;
+  }
+
 }

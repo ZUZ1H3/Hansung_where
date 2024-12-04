@@ -12,7 +12,6 @@ import '../NoticePost.dart';
 import '../DbConn.dart';
 import '../screens/ManagerPage.dart';
 
-
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
@@ -76,14 +75,16 @@ class _HomePageState extends State<HomePage> with RouteAware {
   // 새로고침
   Future<void> _refreshPosts() async {
     setState(() {
-      DbConn.fetchPosts(type: selectedTag);  // 데이터 갱신
+      DbConn.fetchPosts(type: selectedTag); // 데이터 갱신
     });
   }
 
   Widget _buildPostList(String type) {
     return FutureBuilder(
       future: Future.wait([
-        selectedTag == '전체' ? DbConn.fetchLatestNoticePosts() : Future.value(null), // 태그가 전체일 때만 공지사항 가져오기
+        selectedTag == '전체'
+            ? DbConn.fetchLatestNoticePosts()
+            : Future.value(null), // 태그가 전체일 때만 공지사항 가져오기
         DbConn.fetchPosts(type: type), // 게시물 가져오기
       ]),
       builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
@@ -114,7 +115,6 @@ class _HomePageState extends State<HomePage> with RouteAware {
                 showTitle: true,
                 isForHomePage: true,
               );
-
             }
 
             // 이후 게시글 표시
@@ -127,7 +127,6 @@ class _HomePageState extends State<HomePage> with RouteAware {
       },
     );
   }
-
 
   Widget _buildTag(String tag, bool isSelected) {
     return GestureDetector(
@@ -154,12 +153,12 @@ class _HomePageState extends State<HomePage> with RouteAware {
     );
   }
 
-
   Widget _buildTagSelector() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: tags.map((tag) => _buildTag(tag, selectedTag == tag)).toList(),
+        children:
+            tags.map((tag) => _buildTag(tag, selectedTag == tag)).toList(),
       ),
     );
   }
@@ -240,6 +239,53 @@ class _HomePageState extends State<HomePage> with RouteAware {
     );
   }
 
+  void _showSuspendedDialog(BuildContext context, String suspendedUntil) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('정지 상태'),
+          content: Text(
+            '현재 정지 상태입니다.\n정지 해제 시간: $suspendedUntil',
+            style: const TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<bool> _checkUserSuspension(int userId) async {
+    try {
+      final suspendedUntilStr =
+          await DbConn.getUserSuspensionStatus(userId); // 정지 상태 조회
+
+      if (suspendedUntilStr != null) {
+        final DateTime suspendedUntil =
+            DateTime.parse(suspendedUntilStr); // 문자열을 DateTime으로 변환
+        final DateTime now = DateTime.now(); // 현재 시간
+        print("현재: $now, 정지: $suspendedUntil");
+        if (suspendedUntil.isAfter(now)) {
+          return true; // 현재 시간보다 미래라면 정지 상태
+        } else {
+          final success = await DbConn.updateSuspendStatus(userId); // 정지 상태 해제
+          if (success) {
+            print("정지가 해제되었습니다."); // Toast 메시지 표시
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      print('정지 상태 확인 중 오류 발생: $e');
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -265,7 +311,8 @@ class _HomePageState extends State<HomePage> with RouteAware {
                   },
                 ),
                 IconButton(
-                  icon: Image.asset('assets/icons/ic_notification.png', height: 20),
+                  icon: Image.asset('assets/icons/ic_notification.png',
+                      height: 20),
                   onPressed: () {
                     _movePage('notification');
                   },
@@ -280,7 +327,6 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       _movePage('manager'); // userId가 0이면 ManagerPage로 이동
                     }
                   },
-
                 ),
               ],
               bottom: const TabBar(
@@ -317,10 +363,11 @@ class _HomePageState extends State<HomePage> with RouteAware {
                       ),
                       RefreshIndicator(
                         onRefresh: _refreshPosts,
-                        child: _buildPostList('lost'),  // 분실물
+                        child: _buildPostList('lost'), // 분실물
                       ),
                     ],
-                  ),                ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -345,28 +392,42 @@ class _HomePageState extends State<HomePage> with RouteAware {
               child: isPopupVisible
                   ? _buildPopupButtons()
                   : ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    isPopupVisible = true;
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColorStyles.mainBlue,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text(
-                  '글쓰기',
-                  style: TextStyle(
-                    fontFamily: 'Neo',
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
+                      onPressed: () async {
+                        final userId = await getUserId();
+
+                        final bool isSuspended =
+                            await _checkUserSuspension(userId); // 정지 여부 확인
+
+                        if (isSuspended) {
+                          final suspendedUntil =
+                              await DbConn.getUserSuspensionStatus(
+                                  userId); // 정지 해제 시간 가져오기
+                          _showSuspendedDialog(
+                              context, suspendedUntil!); // 정지 다이얼로그 표시
+                        } else {
+                          setState(() {
+                            isPopupVisible = true; // 팝업 버튼 보이기
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ColorStyles.mainBlue,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 32, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        '글쓰기',
+                        style: TextStyle(
+                          fontFamily: 'Neo',
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
             ),
           ),
         ],
