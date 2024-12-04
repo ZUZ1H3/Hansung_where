@@ -56,10 +56,8 @@ class DbConn {
         // 닉네임 중복 확인
         do {
           final randomNum =
-          (1 + (999 - 1) * (DateTime
-              .now()
-              .millisecondsSinceEpoch % 1000))
-              .toString();
+              (1 + (999 - 1) * (DateTime.now().millisecondsSinceEpoch % 1000))
+                  .toString();
           nickname = '부기$randomNum';
           final nicknameResults = await conn.execute(
             'SELECT COUNT(*) AS count FROM users WHERE nickname = :nickname',
@@ -104,8 +102,8 @@ class DbConn {
   }
 
   // 닉네임 업데이트
-  static Future<bool> updateNickname(String studentId,
-      String newNickname) async {
+  static Future<bool> updateNickname(
+      String studentId, String newNickname) async {
     final connection = await getConnection();
     try {
       final result = await connection.execute(
@@ -338,8 +336,7 @@ class DbConn {
       }
 
       // 결과가 있다면 한 줄로 반환
-      return row.map((key, value) =>
-          MapEntry(
+      return row.map((key, value) => MapEntry(
             key,
             value ??
                 (['title', 'body', 'created_at'].contains(key) ? '' : null),
@@ -422,9 +419,7 @@ class DbConn {
       }
 
       // MM/dd HH:mm 형식으로 변환
-      return '${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.day
-          .toString().padLeft(2, '0')} ${parsedDate.hour.toString().padLeft(
-          2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}';
+      return '${parsedDate.month.toString().padLeft(2, '0')}/${parsedDate.day.toString().padLeft(2, '0')} ${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}';
     } catch (e) {
       print("Error formatting date: $e");
       return '';
@@ -514,11 +509,11 @@ class DbConn {
       for (final row in result.rows) {
         final rawCreatedAt = row.assoc()['created_at'];
         final formattedCreatedAt =
-        rawCreatedAt != null ? _formatDate(rawCreatedAt) : '';
+            rawCreatedAt != null ? _formatDate(rawCreatedAt) : '';
 
         final comment = Comment(
           commentId:
-          int.tryParse(row.assoc()['comment_id']?.toString() ?? '') ?? 0,
+              int.tryParse(row.assoc()['comment_id']?.toString() ?? '') ?? 0,
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
           body: row.assoc()['body'] ?? '',
@@ -617,8 +612,7 @@ class DbConn {
         row['created_at'] = _formatDate(row['created_at']); // 날짜 포맷팅
       }
 
-      return row.map((key, value) =>
-          MapEntry(
+      return row.map((key, value) => MapEntry(
             key,
             value ?? '',
           ));
@@ -801,6 +795,7 @@ class DbConn {
     }
   }
 
+  //3일 정지 부여
   static Future<bool> suspendUser({
     required int userId,
     required DateTime suspendedUntil, // 정지 해제 시간
@@ -810,11 +805,7 @@ class DbConn {
 
     try {
       print("User ID: $userId");
-      final formattedDate = suspendedUntil
-          .toUtc()
-          .toString()
-          .split('.')
-          .first; // 밀리초 제거
+      final formattedDate = suspendedUntil.toUtc().toString().split('.').first; // 밀리초 제거
 
       var result = await connection.execute(
         '''
@@ -839,73 +830,44 @@ class DbConn {
     return success; // 결과 반환
   }
 
-  // 실시간 검색어 저장
-  static Future<void> saveSearchKeyword(String keyword) async {
-    final query = '''
-    INSERT INTO search_keywords (keyword, count, updated_at)
-    VALUES (:keyword, 1, NOW())
-    ON DUPLICATE KEY UPDATE count = count + 1, updated_at = NOW()
-  ''';
-    await executeUpdate(query, {'keyword': keyword});
-  }
-
-// 상위 검색어 가져오기
-  static Future<List<String>> getTopSearchKeywords({int limit = 5}) async {
-    final query = '''
-    SELECT keyword 
-    FROM search_keywords 
-    ORDER BY count DESC 
-    LIMIT :limit
-  ''';
-    final results = await executeQuery(query, {'limit': limit});
-    return results.map((row) => row['keyword'] as String).toList();
-  }
-
-  // 댓글단 글
-  static Future<List<Post>> fetchPostsWithMyComments({required int userId}) async {
+  //정지 여부
+  static Future<String?> getUserSuspensionStatus(int userId) async {
     final connection = await getConnection();
-    List<Post> posts = [];
-
     try {
-      final query = '''
-    SELECT DISTINCT 
-      p.post_id, 
-      p.title, 
-      p.body, 
-      p.created_at, 
-      p.user_id, 
-      p.image_url1, 
-      p.place_keyword, 
-      p.thing_keyword
-    FROM 
-      posts p
-    INNER JOIN 
-      comments c ON p.post_id = c.post_id
-    WHERE 
-      c.user_id = :userId
-    ORDER BY 
-      p.created_at DESC
-    ''';
+      final result = await connection.execute(
+        '''
+      SELECT suspended_until 
+      FROM users 
+      WHERE student_id = :userId
+      ''',
+        {'userId': userId}, // 현재 로그인한 사용자 ID
+      );
 
-      final results = await connection.execute(query, {'userId': userId});
-
-      for (final row in results.rows) {
-        posts.add(Post(
-          postId: int.parse(row.assoc()['post_id']!),
-          title: row.assoc()['title'] ?? '',
-          body: row.assoc()['body'] ?? '',
-          createdAt: _calculateRelativeTime(row.assoc()['created_at']),
-          userId: int.parse(row.assoc()['user_id']!),
-          imageUrl1: row.assoc()['image_url1'],
-          place: row.assoc()['place_keyword'],
-          thing: row.assoc()['thing_keyword'],
-        ));
+      if (result.rows.isNotEmpty) {
+        final row = result.rows.first.assoc();
+        return row['suspended_until']; // 정지 상태가 있으면 반환
       }
     } catch (e) {
-      print('Error fetching posts with my comments: $e');
+      print('정지 상태 확인 중 오류 발생: $e');
+    } finally {
+      await connection.close();
     }
+    return null; // 정지 상태가 없으면 null 반환
+  }
 
-    return posts;
+
+  static Future<bool> updateSuspendStatus(int userId) async {
+    final connection = await getConnection();
+    try {
+      final result = await connection.execute(
+        '''UPDATE users SET suspended_until = NULL WHERE student_id = :userId''',
+        {'userId': userId},
+      );
+      return result.affectedRows > BigInt.zero;
+    } catch (e) {
+      print("Error updating suspend_status: $e");
+    }
+    return false;
   }
 
 }
