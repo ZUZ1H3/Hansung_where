@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'theme/colors.dart';
 
-class ReceiverChat extends StatelessWidget {
+class SenderChat extends StatelessWidget {
   final String message; // 메시지 내용
   final String createdAt; // 메시지 시간
 
-  const ReceiverChat({
+  const SenderChat({
     required this.message,
     required this.createdAt,
   });
@@ -18,7 +18,7 @@ class ReceiverChat extends StatelessWidget {
       children: [
         // 시간 표시
         Padding(
-          padding: const EdgeInsets.only(right: 8), // 시간과 메시지 간격
+          padding: const EdgeInsets.only(top: 20, right: 2), // 시간과 메시지 간격
           child: Text(
             createdAt, // 메시지 시간
             style: const TextStyle(
@@ -31,8 +31,9 @@ class ReceiverChat extends StatelessWidget {
         Flexible(
           child: IntrinsicWidth(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10), // 좌우 10의 패딩 추가
-              constraints: const BoxConstraints(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // 상하좌우 10의 패딩 추가
+              constraints: BoxConstraints(
+                maxWidth: 200,
                 minHeight: 30, // 최소 높이 설정
               ),
               decoration: BoxDecoration(
