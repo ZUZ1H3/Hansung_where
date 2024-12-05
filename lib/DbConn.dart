@@ -349,7 +349,7 @@ class DbConn {
   }
 
   // postId로 게시물 제목 가져오기
-  static Future <String?> getPostTitleById({required int postId}) async {
+  static Future<String?> getPostTitleById({required int postId}) async {
     final connection = await getConnection();
     try {
       // execute로 SELECT 쿼리 실행
@@ -428,7 +428,8 @@ class DbConn {
   }
 
   // 공통 MySQL 실행 유틸리티
-  static Future<List<Map<String, dynamic>>> executeQuery(String query, [
+  static Future<List<Map<String, dynamic>>> executeQuery(
+    String query, [
     Map<String, dynamic>? params,
   ]) async {
     final connection = await getConnection();
@@ -442,7 +443,8 @@ class DbConn {
   }
 
   // 공통 MySQL 변경 유틸리티
-  static Future<int> executeUpdate(String query, [
+  static Future<int> executeUpdate(
+    String query, [
     Map<String, dynamic>? params,
   ]) async {
     final connection = await getConnection();
@@ -709,7 +711,6 @@ class DbConn {
     return null;
   }
 
-
   //신고내역을 저장함
   static Future<bool> saveReport({
     required int userId, // 신고된 사용자
@@ -806,7 +807,8 @@ class DbConn {
 
     try {
       print("User ID: $userId");
-      final formattedDate = suspendedUntil.toUtc().toString().split('.').first; // 밀리초 제거
+      final formattedDate =
+          suspendedUntil.toUtc().toString().split('.').first; // 밀리초 제거
 
       var result = await connection.execute(
         '''
@@ -870,7 +872,6 @@ class DbConn {
     return false;
   }
 
-
   //레포트 내역으로 게시글 type 찾기
   static Future<String?> fetchTypeByReport({
     required int reportId,
@@ -893,7 +894,7 @@ class DbConn {
           final row = result.rows.first.assoc();
           return row['type'];
         }
-      } else{
+      } else {
         // comments 테이블에서 post_id 조회
         final commentResult = await connection.execute(
           '''
@@ -968,7 +969,6 @@ class DbConn {
     return null; // 데이터가 없으면 null 반환
   }
 
-
   // 채팅 메시지 저장하기
   static Future<bool> saveMessage({
     required int senderId,
@@ -1025,12 +1025,14 @@ class DbConn {
       );
 
       for (final row in result.rows) {
-
         final message = Message(
-          messageId: int.tryParse(row.assoc()['message_id']?.toString() ?? '') ?? 0,
-          senderId: int.tryParse(row.assoc()['sender_id']?.toString() ?? '') ?? 0,
+          messageId:
+              int.tryParse(row.assoc()['message_id']?.toString() ?? '') ?? 0,
+          senderId:
+              int.tryParse(row.assoc()['sender_id']?.toString() ?? '') ?? 0,
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
-          receiverId: int.tryParse(row.assoc()['receiver_id']?.toString() ?? '') ?? 0,
+          receiverId:
+              int.tryParse(row.assoc()['receiver_id']?.toString() ?? '') ?? 0,
           message: row.assoc()['message'] ?? '',
           createdAt: row.assoc()['createdAt'] ?? '',
         );
@@ -1043,6 +1045,7 @@ class DbConn {
     // 댓글을 그룹화된 형태로 반환
     return messages;
   }
+
   static Future<List<Post>> fetchPostsWithMyComments({
     required int userId,
     required String postType,
@@ -1143,5 +1146,58 @@ class DbConn {
     } finally {
       await connection.close();
     }
+  }
+
+  //게시물 가져오기
+  static Future<List<Post>> fetchMyPosts({
+    required int userId,
+  }) async {
+    final connection = await getConnection(); // 연결 유지
+    List<Post> posts = [];
+
+    try {
+      String sql = '''
+    SELECT 
+      post_id,
+      title, 
+      body, 
+      created_at, 
+      user_id,
+      image_url1, 
+      place_keyword, 
+      thing_keyword 
+    FROM 
+      posts 
+        WHERE 
+      user_id = :userId
+    ORDER BY 
+      created_at DESC
+    ''';
+
+      final results = await connection.execute(sql, {
+        'userId': userId,
+      });
+
+      for (final row in results.rows) {
+        final rawCreatedAt = row.assoc()['created_at'];
+        final relativeTime = _calculateRelativeTime(rawCreatedAt);
+
+        posts.add(Post(
+          postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
+          title: row.assoc()['title'] ?? '',
+          body: row.assoc()['body'] ?? '',
+          createdAt: relativeTime,
+          // 상대적 시간으로 변환된 값 사용
+          userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
+          imageUrl1: row.assoc()['image_url1'],
+          place: row.assoc()['place_keyword'],
+          thing: row.assoc()['thing_keyword'],
+        ));
+      }
+    } catch (e) {
+      print('Error fetching posts: $e');
+    }
+
+    return posts; // 연결을 닫지 않고 재사용
   }
 }
