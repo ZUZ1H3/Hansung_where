@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:hansung_where/PostUploader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../DbConn.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 class WritePage extends StatefulWidget {
   final String type;
@@ -170,13 +172,69 @@ class _WritePageState extends State<WritePage> {
         }
         imageUrls = post['image_urls'] as List<String>; // 이미지 URL 저장
         isDataLoaded = true; // 데이터 로드 완료
+
       });
+      await _downloadImages(imageUrls);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('게시물을 불러오지 못했습니다.')),
       );
     }
   }
+
+  Future<Directory> getCustomTempDirectory() async {
+    try {
+      return await getTemporaryDirectory();
+    } catch (e) {
+      // 기본 캐시 디렉터리로 대체
+      print("getTemporaryDirectory 실패, 기본 경로 사용: $e");
+      return Directory('/data/data/com.example.hansung_where/cache');
+    }
+  }
+
+  Future<void> _downloadImages(List<String> urls) async {
+    print("이미지 다운로드를 시작합니다. URLs 리스트:");
+    for (int i = 0; i < urls.length; i++) {
+      print("URL [$i]: ${urls[i]}");
+    }
+
+    for (int i = 0; i < urls.length; i++) {
+      if (urls[i].isNotEmpty) {
+        try {
+          final response = await http.get(Uri.parse(urls[i]));
+
+          if (response.statusCode == 200) {
+            try {
+              final tempDir = await getCustomTempDirectory(); // 대체 경로 사용
+              print("임시 디렉터리 경로: ${tempDir.path}");
+
+              final filePath = '${tempDir.path}/image_$i.jpg';
+              final file = File(filePath);
+
+              await file.writeAsBytes(response.bodyBytes);
+
+              setState(() {
+                selectedImages[i] = file;
+              });
+              print("다운로드 성공: $filePath");
+            } catch (e) {
+              print("파일 저장 중 오류 발생: $e");
+            }
+          } else {
+            print("HTTP 요청 실패: 상태 코드 ${response.statusCode}");
+          }
+        } catch (e) {
+          print('HTTP 요청 실패: $e');
+        }
+      }
+    }
+
+    print("selectedImages 리스트:");
+    for (var image in selectedImages) {
+      print(image != null ? image.path : 'null');
+    }
+  }
+
 
   /// 장소 선택 다이얼로그
   void _showPlaceDialog() async {
