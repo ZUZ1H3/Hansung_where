@@ -82,8 +82,6 @@ class DbConn {
       print("사용자 정보 저장 완료");
     } catch (e) {
       print("Error in saveUser: $e");
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -100,8 +98,6 @@ class DbConn {
       }
     } catch (e) {
       print("Error fetching nickname: $e");
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
     return null;
   }
@@ -118,8 +114,6 @@ class DbConn {
       return result.affectedRows > BigInt.zero;
     } catch (e) {
       print("Error updating nickname: $e");
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
     return false;
   }
@@ -137,8 +131,6 @@ class DbConn {
     } catch (e) {
       print("Error checking nickname uniqueness: $e");
       return false;
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -155,8 +147,6 @@ class DbConn {
       }
     } catch (e) {
       print("Error fetching profile ID: $e");
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
     return 1; // 기본값
   }
@@ -172,8 +162,6 @@ class DbConn {
       return result.affectedRows > BigInt.zero;
     } catch (e) {
       print("Error updating profile: $e");
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
     return false;
   }
@@ -218,8 +206,6 @@ class DbConn {
     } catch (e) {
       print("Error saving post: $e");
       return false;
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -241,8 +227,6 @@ class DbConn {
     } catch (e) {
       print("Error fetching found post count: $e");
       return 0;
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -305,8 +289,6 @@ class DbConn {
       }
     } catch (e) {
       print('Error fetching posts: $e');
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
 
     return posts; // 연결을 닫지 않고 재사용
@@ -363,8 +345,6 @@ class DbConn {
     } catch (e) {
       print("Error retrieving post: $e");
       return null;
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -419,8 +399,6 @@ class DbConn {
     } catch (e) {
       print("Error saving notice post: $e");
       return false;
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -461,8 +439,6 @@ class DbConn {
     } catch (e) {
       print("MySQL Query Error: $e");
       return [];
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -478,8 +454,6 @@ class DbConn {
     } catch (e) {
       print("MySQL Update Error: $e");
       return 0;
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -569,8 +543,6 @@ class DbConn {
       }
     } catch (e) {
       print('Error fetching comments: $e');
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
 
     // 댓글을 그룹화된 형태로 반환
@@ -602,8 +574,6 @@ class DbConn {
       }
     } catch (e) {
       print("Error fetching notice posts: $e");
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
 
     return noticePosts;
@@ -652,8 +622,6 @@ class DbConn {
     } catch (e) {
       print("Error retrieving notice by ID: $e"); // 디버깅 로그
       return null;
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -680,8 +648,6 @@ class DbConn {
       }
     } catch (e) {
       print('Error fetching latest notice: $e');
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
     return null;
   }
@@ -701,8 +667,6 @@ class DbConn {
       print('게시물 삭제 성공');
     } catch (e) {
       print('게시물 삭제 오류: $e');
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -721,8 +685,6 @@ class DbConn {
       print('댓글 삭제 성공');
     } catch (e) {
       print('댓글 삭제 오류: $e');
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -745,8 +707,6 @@ class DbConn {
       }
     } catch (e) {
       print('가져오기 실패: $e');
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
     return null;
   }
@@ -834,8 +794,6 @@ class DbConn {
       print('게시물 삭제 성공');
     } catch (e) {
       print('게시물 삭제 오류: $e');
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
   }
 
@@ -910,8 +868,6 @@ class DbConn {
       return result.affectedRows > BigInt.zero;
     } catch (e) {
       print("Error updating suspend_status: $e");
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
     return false;
   }
@@ -1090,8 +1046,6 @@ class DbConn {
       }
     } catch (e) {
       print('채팅 메시지 가져오기 실패: $e');
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
 
     return messages;
@@ -1247,8 +1201,6 @@ class DbConn {
       }
     } catch (e) {
       print('Error fetching posts: $e');
-    }finally {
-      await DbConn.closeConnection(); // 연결 닫기
     }
 
     return posts; // 연결을 닫지 않고 재사용
