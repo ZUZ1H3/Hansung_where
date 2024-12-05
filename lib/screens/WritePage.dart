@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:hansung_where/PostUploader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../DbConn.dart';
 
 class WritePage extends StatefulWidget {
   final String type;
@@ -22,6 +23,10 @@ class _WritePageState extends State<WritePage> {
   final List<File?> selectedImages = [null, null, null, null]; // 최대 4개 이미지
   String selectedPlace = "#장소"; // 초기 장소 값
   String selectedKeyword = "#물건"; // 초기 키워드 값
+
+  late int postId; // 편집하기 버튼 클릭시에만 전달 받는 post_id
+  List<String> imageUrls = []; // 불러온 이미지 경로를 저장할 리스트
+  bool isDataLoaded = false; // 데이터 로드 완료 여부 플래그
 
   Future<int> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
@@ -56,7 +61,13 @@ class _WritePageState extends State<WritePage> {
   /// 이미지 제거
   void _removeImage(int index) {
     setState(() {
-      selectedImages[index] = null;
+      if (index < selectedImages.length && selectedImages[index] != null) {
+        // 로컬 이미지 삭제
+        selectedImages[index] = null;
+      } else if (index < imageUrls.length) {
+        // 네트워크 이미지 삭제
+        imageUrls.removeAt(index);
+      }
     });
   }
 
@@ -85,21 +96,84 @@ class _WritePageState extends State<WritePage> {
       // 선택된 이미지에서 null 제거
       List<File> imageFiles = selectedImages.whereType<File>().toList();
 
-      // PostUploader를 사용하여 게시물 업로드
-      await _postUploader.uploadImagesAndSavePost(
-        title: titleController.text,
-        body: contentController.text,
-        userId: userId,
-        imageFiles: imageFiles,
-        type: widget.type,
-        place: selectedPlace,
-        thing: selectedKeyword,
-        context: context,
-      );
+      if (postId != 0) {
+        // postId가 존재하면 게시물 업데이트
+        final success = await DbConn.updatePost(
+          postId: postId,
+          title: titleController.text,
+          body: contentController.text,
+          placeKeyword: selectedPlace,
+          thingKeyword: selectedKeyword,
+          images: imageUrls,
+        );
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('게시물이 성공적으로 업데이트되었습니다.')),
+          );
+          Navigator.pop(context); // 페이지 닫기
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('게시물 업데이트 중 오류가 발생했습니다.')),
+          );
+        }
+      } else { // postId가 없으면 새 게시물 등록
+        await _postUploader.uploadImagesAndSavePost(
+          title: titleController.text,
+          body: contentController.text,
+          userId: userId,
+          imageFiles: imageFiles,
+          type: widget.type,
+          place: selectedPlace,
+          thing: selectedKeyword,
+          context: context,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('게시물이 성공적으로 등록되었습니다.')),
+        );
+      }
     } catch (e) {
       print("Error uploading post: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('게시물 업로드 중 오류가 발생했습니다: $e')),
+        SnackBar(content: Text('게시물 처리 중 오류가 발생했습니다: $e')),
+      );
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+
+    // 전달받은 데이터를 null 안전하게 처리
+    postId = args?['post_id'] as int? ?? 0;
+
+    // postId가 유효할 때만 데이터를 불러옴
+    if (postId != 0) {
+      _loadPostData();
+    }
+  }
+
+  // 게시물 불러오기
+  Future<void> _loadPostData() async {
+    final post = await DbConn.loadPostData(postId);
+
+    if (post != null) {
+      setState(() {
+        titleController.text = post['title'];
+        contentController.text = post['body'];
+        if (!isDataLoaded) {
+          selectedPlace = post['place_keyword']; // 초기 장소 값 설정
+          selectedKeyword = post['thing_keyword']; // 초기 키워드 값 설정
+        }
+        imageUrls = post['image_urls'] as List<String>; // 이미지 URL 저장
+        isDataLoaded = true; // 데이터 로드 완료
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('게시물을 불러오지 못했습니다.')),
       );
     }
   }
@@ -590,19 +664,27 @@ class _WritePageState extends State<WritePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(
                     4,
-                    (index) => Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        color: Colors.white, // 슬롯 배경을 흰색으로 설정
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(8),
-                        image: selectedImages[index] != null
-                            ? DecorationImage(
-                                image: FileImage(selectedImages[index]!),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
+                        (index) => GestureDetector(
+                      onTap: () => _removeImage(index), // 네모 박스 클릭 시 _removeImage 호출
+                      child: Container(
+                        width: 76,
+                        height: 76,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                          image: (index < selectedImages.length && selectedImages[index] != null)
+                              ? DecorationImage(
+                            image: FileImage(selectedImages[index]!),
+                            fit: BoxFit.cover,
+                          )
+                              : (index < imageUrls.length && imageUrls[index].isNotEmpty)
+                              ? DecorationImage(
+                            image: NetworkImage(imageUrls[index]),
+                            fit: BoxFit.cover,
+                          )
+                              : null,
+                        ),
                       ),
                     ),
                   ),

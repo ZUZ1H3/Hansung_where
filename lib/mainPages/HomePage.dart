@@ -28,7 +28,13 @@ class _HomePageState extends State<HomePage> with RouteAware {
   void initState() {
     super.initState();
     _initPrefs(); // SharedPreferences 초기화
-    _refreshPosts();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // RouteAware 등록
+    RouteObserver<ModalRoute>().subscribe(this, ModalRoute.of(context)!);
   }
 
   @override

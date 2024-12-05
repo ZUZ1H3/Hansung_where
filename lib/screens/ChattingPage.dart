@@ -4,6 +4,7 @@ import '../theme/colors.dart';
 import '../DbConn.dart';
 import '../SenderChat.dart';
 import '../ReceiverChat.dart';
+import '../Message.dart';
 
 class Chatting extends StatefulWidget {
   final String postTitle;
@@ -26,21 +27,30 @@ class _ChattingState extends State<Chatting> {
   bool hasFocus = false;
   bool _isVisble = true;
   final String createdAt = "";
-  late List<Map<String, String>> _chatMessages = []; // 채팅 메시지 저장
+  late List<Message> _chatMessages = []; // 채팅 메시지 저장
   SharedPreferences? prefs;
   late String currentUserId; // 현재 접속 중인 사용자 ID
+  String _latestDate = "";   // 최신 채팅 날짜
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(_onFocusChanged); // 포커스 변화
+    _focusNode.addListener(_onFocusChanged);
     _initPref();
-    _fetchMessages();
-    Future.delayed(const Duration(seconds: 2), () {
+    _loadInitialData();
+    Future.delayed(const Duration(seconds: 1), () {
       setState(() {
         _isVisble = false;
       });
     });
+  }
+
+  Future<void> _loadInitialData() async {
+    await Future.wait([
+      _fetchMessages(),
+      _fetchLatestDate(),
+    ]);
   }
 
   // SharedPreferences 초기화
@@ -51,14 +61,30 @@ class _ChattingState extends State<Chatting> {
 
   @override
   void dispose() {
+    _isDisposed = true; // State가 폐기되었음을 표시
     _focusNode.removeListener(_onFocusChanged); // 리스너 제거
     _focusNode.dispose(); // FocusNode 정리
+    _messageController.dispose();
     super.dispose();
   }
 
   void _onFocusChanged() {
     setState(() {
       hasFocus = _focusNode.hasFocus; // 포커스 상태 업데이트
+    });
+  }
+
+  // 최신 날짜 불러오기
+  Future<void> _fetchLatestDate() async {
+    final latestDate = await DbConn.fetchCreatedAtMessages(postId: widget.postId);
+
+    // 현재 날짜 가져오기
+    final currentDate = DateTime.now();
+    final formattedCurrentDate =
+        "${currentDate.year}.${currentDate.month.toString().padLeft(2, '0')}.${currentDate.day.toString().padLeft(2, '0')}";
+
+    setState(() {
+      _latestDate = latestDate ?? formattedCurrentDate; // 최신 날짜가 없으면 현재 날짜 사용
     });
   }
 
@@ -139,7 +165,7 @@ class _ChattingState extends State<Chatting> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 10),
                 AnimatedSwitcher(
                   duration: const Duration(seconds: 1), // 애니메이션 지속 시간
                   transitionBuilder: (Widget child,
@@ -156,9 +182,9 @@ class _ChattingState extends State<Chatting> {
                           color: ColorStyles.mainBlue,
                           borderRadius: BorderRadius.circular(12), // 둥근 모서리
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            "2024.12.05",
+                            _latestDate,
                             style: TextStyle(fontSize: 12, color: Colors.white),
                           ),
                         ),
@@ -176,33 +202,33 @@ class _ChattingState extends State<Chatting> {
               itemCount: _chatMessages.length,
               itemBuilder: (context, index) {
                 final chat = _chatMessages[index];
-                final isSender = chat['senderId'] == currentUserId;
+                final isSender = chat.senderId.toString() == currentUserId;
 
-                if (isSender) {
-                  // SenderChat
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
-                    child: SenderChat(
-                      message: chat['message'] ?? '',
-                      createdAt: chat['createdAt'] ?? '',
-                    ),
-                  );
-                } else {
-                  // ReceiverChat
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
-                    child: ReceiverChat(
-                      message: chat['message'] ?? '',
-                      createdAt: chat['createdAt'] ?? '',
-                      showProfile: true, // 프로필 표시 여부
-                      profileImage: _getProfileImagePath(widget.receiverId), // 프로필 이미지
-                    ),
-                  );
-                }
+                // profileId를 결정
+                final profileId = (isSender)
+                    ? int.tryParse(chat.receiverProfileId ?? '1') ?? 1
+                    : int.tryParse(chat.senderProfileId ?? '1') ?? 1;
+
+                return isSender
+                    ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
+                  child: SenderChat(
+                    message: chat.message,
+                    createdAt: chat.createdAt,
+                  ),
+                )
+                    : Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 20),
+                  child: ReceiverChat(
+                    message: chat.message,
+                    createdAt: chat.createdAt,
+                    showProfile: true,
+                    profileImage: _getProfileImagePath(profileId),
+                  ),
+                );
               },
             ),
           ),
-
           // 댓글 입력 필드
           Padding(
             padding: const EdgeInsets.all(10),
@@ -297,18 +323,12 @@ class _ChattingState extends State<Chatting> {
   Future<void> _fetchMessages() async {
     try {
       final fetchedMessages = await DbConn.fetchMessages(postId: widget.postId);
-      print("Fetched messages: ${fetchedMessages}"); // 디버그 출력
 
-      setState(() {
-        _chatMessages = fetchedMessages.map((message) {
-          return {
-            'senderId': message.senderId.toString(),
-            'receiverId': message.receiverId.toString(),
-            'message': message.message,
-            'createdAt': message.createdAt,
-          };
-        }).toList();
-      });
+      if (!_isDisposed) {
+        setState(() {
+          _chatMessages = fetchedMessages;
+        });
+      }
     } catch (e) {
       print('채팅 메시지 가져오기 오류: $e');
     }
