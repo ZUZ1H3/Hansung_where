@@ -5,6 +5,8 @@ class Message {
   final int postId;            // 해당 게시물 ID
   final String message;        // 내용
   final String createdAt;      // 작성 시간
+  final String? senderProfileId;    // sender 의 프로필 id 값
+  final String? receiverProfileId;  // receiver 의 프로필 id 값
 
   // 생성자
   Message({
@@ -14,5 +16,7 @@ class Message {
     required this.postId,
     required this.message,
     required this.createdAt,
+    this.senderProfileId,
+    this.receiverProfileId,
   });
 }

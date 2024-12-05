@@ -109,25 +109,32 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isLoggedIn = prefs?.getBool('isLogIn') ?? false;
+
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
-        children: _pages,
+        children: [
+          MapPage(),
+          isLoggedIn ? HomePage() : LoginPage(), // 로그인 상태에 따라 화면 변경
+          isLoggedIn ? ChatPage() : LoginPage(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: ColorStyles.mainBlue,
-        // 하단 바 배경 색상
         selectedItemColor: Colors.white,
-        // 선택된 아이템 색상
         unselectedItemColor: ColorStyles.navGrey,
         currentIndex: _selectedIndex,
         showSelectedLabels: false,
         showUnselectedLabels: false,
         onTap: (int index) async {
-          if (index == 2) {
-            // 채팅 메뉴 클릭 시
-            await _moveChat(); // 로그인 여부에 따라 페이지 이동
+          if (index == 2 && !isLoggedIn) {
+            // 로그인 상태가 아니면 로그인 화면으로 이동
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => LoginPage()),
+            );
           } else {
             setState(() {
               _selectedIndex = index;

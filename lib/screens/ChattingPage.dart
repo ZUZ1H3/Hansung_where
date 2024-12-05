@@ -29,6 +29,7 @@ class _ChattingState extends State<Chatting> {
   late List<Map<String, String>> _chatMessages = []; // 채팅 메시지 저장
   SharedPreferences? prefs;
   late String currentUserId; // 현재 접속 중인 사용자 ID
+  String _latestDate = "";   // 최신 채팅 날짜
 
   @override
   void initState() {
@@ -36,7 +37,8 @@ class _ChattingState extends State<Chatting> {
     _focusNode.addListener(_onFocusChanged); // 포커스 변화
     _initPref();
     _fetchMessages();
-    Future.delayed(const Duration(seconds: 2), () {
+    _fetchLatestDate();
+    Future.delayed(const Duration(seconds: 1), () {
       setState(() {
         _isVisble = false;
       });
@@ -59,6 +61,14 @@ class _ChattingState extends State<Chatting> {
   void _onFocusChanged() {
     setState(() {
       hasFocus = _focusNode.hasFocus; // 포커스 상태 업데이트
+    });
+  }
+
+  // 최신 날짜 불러오기
+  Future<void> _fetchLatestDate() async {
+    final latestDate = await DbConn.fetchCreatedAtMessages(postId: widget.postId);
+    setState(() {
+      _latestDate = latestDate ?? "2024.12.00"; // 기본 값
     });
   }
 
@@ -139,7 +149,7 @@ class _ChattingState extends State<Chatting> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 10),
                 AnimatedSwitcher(
                   duration: const Duration(seconds: 1), // 애니메이션 지속 시간
                   transitionBuilder: (Widget child,
@@ -156,9 +166,9 @@ class _ChattingState extends State<Chatting> {
                           color: ColorStyles.mainBlue,
                           borderRadius: BorderRadius.circular(12), // 둥근 모서리
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            "2024.12.05",
+                            _latestDate,
                             style: TextStyle(fontSize: 12, color: Colors.white),
                           ),
                         ),
@@ -178,6 +188,9 @@ class _ChattingState extends State<Chatting> {
                 final chat = _chatMessages[index];
                 final isSender = chat['senderId'] == currentUserId;
 
+                // profileId를 String에서 int로 변환
+                final profileId = int.tryParse(chat['profileId'] ?? '1') ?? 1;
+
                 if (isSender) {
                   // SenderChat
                   return Padding(
@@ -195,7 +208,7 @@ class _ChattingState extends State<Chatting> {
                       message: chat['message'] ?? '',
                       createdAt: chat['createdAt'] ?? '',
                       showProfile: true, // 프로필 표시 여부
-                      profileImage: _getProfileImagePath(widget.receiverId), // 프로필 이미지
+                      profileImage: _getProfileImagePath(profileId),
                     ),
                   );
                 }
@@ -297,15 +310,23 @@ class _ChattingState extends State<Chatting> {
   Future<void> _fetchMessages() async {
     try {
       final fetchedMessages = await DbConn.fetchMessages(postId: widget.postId);
-      print("Fetched messages: ${fetchedMessages}"); // 디버그 출력
 
       setState(() {
         _chatMessages = fetchedMessages.map((message) {
+          final senderId = message.senderId.toString();
+          final receiverId = message.receiverId.toString();
+
+          // 현재 사용자 ID와 비교하여 적절한 프로필 경로 설정
+          final profileId = (currentUserId == senderId)
+              ? int.tryParse(message.receiverProfileId ?? '1') ?? 1
+              : int.tryParse(message.senderProfileId ?? '1') ?? 1;
+
           return {
-            'senderId': message.senderId.toString(),
-            'receiverId': message.receiverId.toString(),
+            'senderId': senderId,
+            'receiverId': receiverId,
             'message': message.message,
             'createdAt': message.createdAt,
+            'profileId': profileId.toString(), // 추가된 프로필 ID
           };
         }).toList();
       });

@@ -1012,14 +1012,18 @@ class DbConn {
       final result = await connection.execute(
         '''
       SELECT 
-        message_id,
-        sender_id,
-        post_id,
-        receiver_id,
-        message,
-        DATE_FORMAT(createdAt, '%H:%i') as createdAt
-      FROM messages 
-      WHERE post_id = :postId
+        m.message_id,
+        m.sender_id,
+        m.post_id,
+        m.receiver_id,
+        m.message,
+        DATE_FORMAT(m.createdAt, '%H:%i') as createdAt,
+        sender.profile AS senderProfileId,
+        receiver.profile AS receiverProfileId
+      FROM messages m
+      LEFT JOIN users sender ON m.sender_id = sender.student_id
+      LEFT JOIN users receiver ON m.receiver_id = receiver.student_id
+      WHERE m.post_id = :postId
       ''',
         {'postId': postId},
       );
@@ -1027,14 +1031,16 @@ class DbConn {
       for (final row in result.rows) {
         final message = Message(
           messageId:
-              int.tryParse(row.assoc()['message_id']?.toString() ?? '') ?? 0,
+          int.tryParse(row.assoc()['message_id']?.toString() ?? '') ?? 0,
           senderId:
-              int.tryParse(row.assoc()['sender_id']?.toString() ?? '') ?? 0,
+          int.tryParse(row.assoc()['sender_id']?.toString() ?? '') ?? 0,
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           receiverId:
-              int.tryParse(row.assoc()['receiver_id']?.toString() ?? '') ?? 0,
+          int.tryParse(row.assoc()['receiver_id']?.toString() ?? '') ?? 0,
           message: row.assoc()['message'] ?? '',
           createdAt: row.assoc()['createdAt'] ?? '',
+          senderProfileId: row.assoc()['senderProfileId'],
+          receiverProfileId: row.assoc()['receiverProfileId'],
         );
         messages.add(message);
       }
@@ -1042,7 +1048,6 @@ class DbConn {
       print('채팅 메시지 가져오기 실패: $e');
     }
 
-    // 댓글을 그룹화된 형태로 반환
     return messages;
   }
 
@@ -1201,39 +1206,42 @@ class DbConn {
     return posts; // 연결을 닫지 않고 재사용
   }
 
-  // 메시지 가져오기 함수
-  static Future<List<Map<String, dynamic>>> fetchSamePostMessages() async {
+  // 현재 접속 중인 유저 Id 가 sender_id와 동일할 때는 receiver_id 값의 users 테이블 정보를 불러오고
+  // receiver_id와 동일할 때는 sender_id 값의 users 테이블 정보를 불러 옴
+  static Future<List<Map<String, dynamic>>> fetchSamePostMessages({required int currentStudentId}) async {
     final connection = await getConnection();
     List<Map<String, dynamic>> messages = [];
 
     try {
       final result = await connection.execute(
-          '''
-          SELECT m.*, u.nickname, u.profile
-          FROM messages m
-          INNER JOIN (
-              SELECT post_id, MAX(createdAt) AS latest_message_time
-              FROM messages
-              GROUP BY post_id
-          ) latest_messages
-          ON m.post_id = latest_messages.post_id AND m.createdAt = latest_messages.latest_message_time
-          INNER JOIN users u ON m.sender_id = u.student_id;
         '''
+      SELECT 
+          m.*,
+          CASE 
+              WHEN m.sender_id = :currentStudentId THEN u_receiver.nickname
+              WHEN m.receiver_id = :currentStudentId THEN u_sender.nickname
+          END AS nickname,
+          CASE 
+              WHEN m.sender_id = :currentStudentId THEN u_receiver.profile
+              WHEN m.receiver_id = :currentStudentId THEN u_sender.profile
+          END AS profile
+      FROM messages m
+      INNER JOIN (
+          SELECT post_id, MAX(createdAt) AS latest_message_time
+          FROM messages
+          GROUP BY post_id
+      ) latest_messages
+      ON m.post_id = latest_messages.post_id AND m.createdAt = latest_messages.latest_message_time
+      LEFT JOIN users u_sender ON m.sender_id = u_sender.student_id
+      LEFT JOIN users u_receiver ON m.receiver_id = u_receiver.student_id
+      WHERE m.sender_id = :currentStudentId OR m.receiver_id = :currentStudentId;
+      ''',
+        {'currentStudentId': currentStudentId},
       );
 
       for (final row in result.rows) {
-        // sender_id 가져오기
-        final senderId = row.assoc()['sender_id']?.toString() ?? '';
-
-        // sender_id 기반으로 profileId와 nickname 가져오기
-        final profileId = await getProfileId(senderId); // profileId 가져오기
-        final nickname = await getNickname(senderId); // nickname 가져오기
-
-        // 메시지에 추가 정보 포함
         final message = {
           ...row.assoc(),
-          'profile': profileId,
-          'nickname': nickname,
         };
 
         messages.add(message);
@@ -1247,5 +1255,31 @@ class DbConn {
     return messages;
   }
 
+  // 최신 createdAt 값 가져오기
+  static Future<String?> fetchCreatedAtMessages({required int postId}) async {
+    final connection = await getConnection();
+    String? formattedDate;
+
+    try {
+      final result = await connection.execute(
+        '''
+      SELECT DATE_FORMAT(MAX(createdAt), '%Y.%m.%d') as latestCreatedAt
+      FROM messages
+      WHERE post_id = :postId
+      ''',
+        {'postId': postId},
+      );
+
+      if (result.rows.isNotEmpty) {
+        formattedDate = result.rows.first.assoc()['latestCreatedAt']?.toString();
+      }
+    } catch (e) {
+      print('최신 createdAt 가져오기 실패: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return formattedDate;
+  }
 
 }
