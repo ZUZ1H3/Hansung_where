@@ -39,7 +39,8 @@ class _SearchPageState extends State<SearchPage> {
   /// MySQL에서 실시간 검색어 상위 5개 가져오기
   Future<void> fetchTrendingKeywords() async {
     try {
-      final results = await DbConn.getTopSearchKeywords(limit: 5); // DbConn에서 쿼리 실행
+      final results =
+          await DbConn.getTopSearchKeywords(limit: 5); // DbConn에서 쿼리 실행
       setState(() {
         trendingKeywords = results;
       });
@@ -106,13 +107,14 @@ class _SearchPageState extends State<SearchPage> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               '실시간 검색어',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 14, fontFamily: 'Neo', fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             Wrap(
@@ -125,50 +127,85 @@ class _SearchPageState extends State<SearchPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF042D6F),
                     shape: RoundedRectangleBorder(
-
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 0), // 버튼 내부 패딩
                   ),
                   child: Text(
                     keyword,
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12, // 글자 크기 축소 (선택적)
+                        fontFamily: 'Neo',
+                        fontWeight: FontWeight.bold),
                   ),
                 );
               }).toList(),
             ),
-            SizedBox(height: 24),
+            SizedBox(height: 28),
             Text(
               '최근 검색어',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 14, fontFamily: 'Neo', fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             if (recentSearches.isNotEmpty)
               Column(
                 children: recentSearches.map((search) {
-                  return ListTile(
-                    leading: Icon(Icons.history, color: Colors.grey),
-                    title: Text(search),
-                    trailing: IconButton(
-                      icon: Icon(Icons.close, color: Colors.grey),
-                      onPressed: () {
-                        setState(() {
-                          recentSearches.remove(search);
-                        });
-                        saveRecentSearches();
-                      },
-                    ),
-                    onTap: () {
-                      navigateToSearchResult(search);
-                    },
+                  return Column(
+                    children: [
+                      ListTile(
+                        leading: Image.asset(
+                          'assets/icons/ic_recent.png',
+                          color: Colors.grey, // 색상 적용 (선택 사항)
+                          width: 20, // 아이콘 크기 조정
+                          height: 20, // 아이콘 크기 조정
+                        ),
+                        title: Text(
+                          search,
+                          style: TextStyle(
+                            fontSize: 14, // 글자 크기
+                            color: Colors.black, // 글자 색상
+                            fontFamily: 'Neo',
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon:  Image.asset(
+                            'assets/icons/ic_x.png',
+                            color: Colors.grey, // 색상 적용 (선택 사항)
+                            width: 20, // 아이콘 크기 조정
+                            height: 20, // 아이콘 크기 조정
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              recentSearches.remove(search);
+                            });
+                            saveRecentSearches();
+                          },
+                        ),
+                        onTap: () {
+                          navigateToSearchResult(search);
+                        },
+                      ),
+                      Divider(
+                        color: Color(0xFFE0E0E0), // 구분선 색상을 E0E0E0로 설정
+                        thickness: 1, // 구분선 두께
+                        indent: 10, // 왼쪽 여백
+                        endIndent: 10, // 오른쪽 여백
+                      ),
+                    ],
                   );
                 }).toList(),
               )
             else
               Text(
                 '최근 검색어가 없습니다.',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16,
+                    fontFamily: 'Neo',
+                    fontWeight: FontWeight.bold),
               ),
           ],
         ),
