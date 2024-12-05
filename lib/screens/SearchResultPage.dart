@@ -154,9 +154,10 @@ class _SearchResultState extends State<SearchResult> {
                       searchResults = _fetchSearchResults(searchController.text);
                     });
                   },
+
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? const Color(0xFF042D6F)
@@ -176,6 +177,7 @@ class _SearchResultState extends State<SearchResult> {
             ),
           ),
           Expanded(
+
             child: FutureBuilder<List<Post>>(
               future: searchResults,
               builder: (context, snapshot) {
