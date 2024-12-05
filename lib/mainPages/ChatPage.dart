@@ -3,6 +3,7 @@ import '../theme/colors.dart';
 import '../DbConn.dart';
 import '../screens/ChattingPage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 class ChatPage extends StatefulWidget {
   @override
@@ -11,25 +12,46 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   List<Map<String, dynamic>> chatList = [];
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     loadMessages(); // 초기 데이터 로드
+    _startAutoRefresh();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   // DB에서 메시지 가져오기
   Future<void> loadMessages() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    int currentStudentId = int.tryParse(prefs.getString('studentId') ?? '') ?? 1; // int로 변환, 기본값 -1
+    int currentStudentId = int.tryParse(prefs.getString('studentId') ?? '') ?? 1;
 
     final messages = await DbConn.fetchSamePostMessages(currentStudentId: currentStudentId);
-    setState(() {
-      chatList = messages;
+
+    setState(() { // 최신 메시지가 상단에 위치
+      chatList = messages
+        ..sort((a, b) => (b['createdAt'] ?? '').compareTo(a['createdAt'] ?? ''));
     });
   }
 
+  // 30초 간격으로 재실행
+  void _startAutoRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        loadMessages();
+      } else {
+        timer.cancel();
+      }
+    });
+  }
 
+  // 이미지 경로
   String _getProfileImagePath(int profileId) {
     switch (profileId) {
       case 1:

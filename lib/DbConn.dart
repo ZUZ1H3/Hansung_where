@@ -4,7 +4,7 @@ import 'Post.dart'; // Post 모델 임포트
 import 'Comment.dart';
 import 'NoticePost.dart'; // Post 모델 임포트
 import 'Report.dart';
-import 'Chat.dart';
+import 'Message.dart';
 
 class DbConn {
   static MySQLConnection? _connection;
