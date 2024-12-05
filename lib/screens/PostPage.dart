@@ -23,7 +23,7 @@ class PostPage extends StatefulWidget {
   _PostPageState createState() => _PostPageState();
 }
 
-class _PostPageState extends State<PostPage> {
+class _PostPageState extends State<PostPage> with RouteAware  {
   SharedPreferences? prefs;
   Future<Map<String, dynamic>?> postFuture = Future.value(null);
   String studentId = ""; // 현재 접속중인 학번
@@ -54,7 +54,22 @@ class _PostPageState extends State<PostPage> {
   void dispose() {
     _focusNode.removeListener(_onFocusChanged); // 리스너 제거
     _focusNode.dispose(); // FocusNode 정리
+    _commentController.dispose(); // 댓글 작성 정리
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // RouteAware 등록
+    RouteObserver<ModalRoute>().subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // 화면이 돌아올 때 새로고침
+    _fetchComments();
   }
 
   void _onFocusChanged() {
@@ -175,210 +190,185 @@ class _PostPageState extends State<PostPage> {
       body: Column(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 25),
-                    Row(
-                      children: [
-                        const SizedBox(width: 10),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context); // 뒤로 가기
-                          },
-                          child: const ImageIcon(
-                            AssetImage('assets/icons/ic_back.png'),
+            child: RefreshIndicator(
+            onRefresh: _fetchComments,
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 25),
+                      Row(
+                        children: [
+                          const SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pop(context); // 뒤로 가기
+                            },
+                            child: const ImageIcon(
+                              AssetImage('assets/icons/ic_back.png'),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 110),
-                        Text(
-                          titleText,
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(width: 89),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
+                          const SizedBox(width: 110),
+                          Text(
+                            titleText,
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 89),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context, MaterialPageRoute(
                                   builder: (context) => NotificationPage()),
-                            );
-                          },
-                          child: Transform.translate(
-                            offset: const Offset(0, -1), // Y축으로 1만큼 올리기
+                              );
+                            },
+                            child: Transform.translate(
+                              offset: const Offset(0, -1), // Y축으로 1만큼 올리기
+                              child: Image.asset(
+                                'assets/icons/ic_notification.png',
+                                width: 20,
+                                height: 20,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          GestureDetector(
+                            onTap: () {
+                              _showPopupMenu(context, postUserId, studentId);
+                              selectedCommentId = null;
+                            },
                             child: Image.asset(
-                              'assets/icons/ic_notification.png',
+                              'assets/icons/ic_dots.png',
                               width: 20,
                               height: 20,
                               fit: BoxFit.contain,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        GestureDetector(
-                          onTap: () {
-                            _showPopupMenu(context, postUserId, studentId);
-                            selectedCommentId = null;
-                          },
-                          child: Image.asset(
-                            'assets/icons/ic_dots.png',
-                            width: 20,
-                            height: 20,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    // 게시글
-                    FutureBuilder<Map<String, dynamic>?>(
-                      future: postFuture,
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData || snapshot.data == null) {
-                          return const Center(child: Text('게시글을 찾을 수 없습니다.'));
-                        }
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      // 게시글
+                      FutureBuilder<Map<String, dynamic>?> (
+                        future: postFuture,
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData || snapshot.data == null) {
+                            return const Center(child: Text('게시글을 찾을 수 없습니다.'));
+                          }
 
-                        // Map 데이터를 Post 객체로 변환
-                        final postData = snapshot.data!;
+                          // Map 데이터를 Post 객체로 변환
+                          final postData = snapshot.data!;
 
-                        return FutureBuilder(
-                          future: Future.wait([
-                            DbConn.getNickname(postUserId),
-                            DbConn.getProfileId(postUserId),
-                          ]),
-                          builder: (context,
-                              AsyncSnapshot<List<dynamic>> asyncSnapshot) {
-                            if (asyncSnapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            }
-                            if (asyncSnapshot.hasError) {
-                              return const Center(child: Text('오류가 발생했습니다.'));
-                            }
+                          return FutureBuilder(
+                            future: Future.wait([
+                              DbConn.getNickname(postUserId),
+                              DbConn.getProfileId(postUserId),
+                            ]),
+                            builder: (context,
+                                AsyncSnapshot<List<dynamic>> asyncSnapshot) {
+                              if (asyncSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              if (asyncSnapshot.hasError) {
+                                return const Center(child: Text('오류가 발생했습니다.'));
+                              }
 
-                            // 닉네임 및 프로필 경로 설정
-                            userNickname = asyncSnapshot.data?[0] ?? "";
-                            final profileId = asyncSnapshot.data?[1] ?? 0;
-                            profilePath = _getProfileImagePath(profileId);
+                              // 닉네임 및 프로필 경로 설정
+                              userNickname = asyncSnapshot.data?[0] ?? "";
+                              final profileId = asyncSnapshot.data?[1] ?? 0;
+                              profilePath = _getProfileImagePath(profileId);
 
-                            // Post 객체 생성
-                            final post = Post(
-                              postId: widget.post_id,
-                              title: postData['title'] as String? ?? '제목 없음',
-                              body: postData['body'] as String? ?? '내용 없음',
-                              createdAt:
-                                  postData['created_at'] as String? ?? '',
-                              userId: (postData['user_id'] != null)
-                                  ? int.tryParse(
-                                          postData['user_id'].toString()) ??
-                                      0
-                                  : 0,
-                              imageUrl1: postData['image_url1'] as String?,
-                              imageUrl2: postData['image_url2'] as String?,
-                              imageUrl3: postData['image_url3'] as String?,
-                              imageUrl4: postData['image_url4'] as String?,
-                              place: postData['place_keyword'] as String?,
-                              thing: postData['thing_keyword'] as String?,
-                            );
+                              // Post 객체 생성
+                              final post = Post(
+                                postId: widget.post_id,
+                                title: postData['title'] as String? ?? '제목 없음',
+                                body: postData['body'] as String? ?? '내용 없음',
+                                createdAt: postData['created_at'] as String? ?? '',
+                                userId: (postData['user_id'] != null)
+                                    ? int.tryParse(postData['user_id'].toString()) ?? 0
+                                    : 0,
+                                imageUrl1: postData['image_url1'] as String?,
+                                imageUrl2: postData['image_url2'] as String?,
+                                imageUrl3: postData['image_url3'] as String?,
+                                imageUrl4: postData['image_url4'] as String?,
+                                place: postData['place_keyword'] as String?,
+                                thing: postData['thing_keyword'] as String?,
+                              );
 
-                            // 게시물
-                            return SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  RoundPost(
-                                    profile: profilePath,
-                                    nickname: userNickname,
-                                    createdAt: post.createdAt,
-                                    title: post.title,
-                                    body: post.body,
-                                    commentCnt: comments.length,
-                                    keywords: post.keywords,
-                                    images: post.images,
-                                  ),
-                                  // 댓글 목록
-                                  comments.isEmpty
-                                      ? Container() // 댓글이 없을 때 빈 공간 표시
-                                      : ListView.builder(
-                                          shrinkWrap: true,
-                                          // ListView가 부모 크기를 초과하지 않도록 제한
-                                          physics:
-                                              NeverScrollableScrollPhysics(),
-                                          itemCount: comments.length,
-                                          itemBuilder: (context, index) {
-                                            final comment = comments[index];
-                                            final isSelected =
-                                                comment.commentId ==
-                                                    selectedCommentId;
+                              // 게시물
+                              return SingleChildScrollView(
+                                child: Column(
+                                  children: [
+                                    RoundPost(
+                                      profile: profilePath,
+                                      nickname: userNickname,
+                                      createdAt: post.createdAt,
+                                      title: post.title,
+                                      body: post.body,
+                                      commentCnt: comments.length,
+                                      keywords: post.keywords,
+                                      images: post.images,
+                                    ),
+                                    // 댓글 목록
+                                    comments.isEmpty
+                                        ? Container() // 댓글이 없을 때 빈 공간 표시
+                                        : ListView.builder(
+                                      shrinkWrap: true, // ListView가 부모 크기를 초과하지 않도록 제한
+                                      physics: NeverScrollableScrollPhysics(),
+                                      itemCount: comments.length,
+                                      itemBuilder: (context, index) {
+                                        final comment = comments[index];
+                                        final isSelected = comment.commentId == selectedCommentId;
 
-                                            return Padding(
-                                              padding: const EdgeInsets.only(
-                                                  bottom: 10), // 댓글들 사이 간격 10
-                                              child: comment.parentCommentId ==
-                                                      null
-                                                  ? RoundComment(
-                                                      nickname:
-                                                          comment.nickname ??
-                                                              '',
-                                                      body: comment.body,
-                                                      createdAt:
-                                                          comment.createdAt,
-                                                      borderColor: isSelected
-                                                          ? ColorStyles.mainBlue
-                                                          : ColorStyles
-                                                              .borderGrey,
-                                                      onReplyClick: () {
-                                                        _onReplyClick(
-                                                            comment.commentId);
-                                                      },
-                                                      userId: studentId,
-                                                      commenterId: comment
-                                                          .userId
-                                                          .toString(),
-                                                      commentId:
-                                                          comment.commentId,
-                                                      onDeleteClick:
-                                                          (commentId) {
-                                                        _deleteComment(
-                                                            commentId);
-                                                        _fetchComments(); // 댓글 동기화
-                                                      },
-                                                    )
-                                                  : RoundReply(
-                                                      nickname:
-                                                          comment.nickname ??
-                                                              '',
-                                                      body: comment.body,
-                                                      createdAt:
-                                                          comment.createdAt,
-                                                      userId: studentId,
-                                                      commenterId: comment
-                                                          .userId
-                                                          .toString(),
-                                                      commentId:
-                                                          comment.commentId,
-                                                      onDeleteClick:
-                                                          (commentId) {
-                                                        _deleteComment(
-                                                            commentId);
-                                                        _fetchComments(); // 댓글 동기화
-                                                      },
-                                                    ),
-                                            );
-                                          },
-                                        ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ],
+                                        return Padding(
+                                          padding: const EdgeInsets.only(bottom: 10), // 댓글들 사이 간격 10
+                                          child: comment.parentCommentId == null
+                                              ? RoundComment(
+                                            nickname: comment.nickname ?? '',
+                                            body: comment.body,
+                                            createdAt: comment.createdAt,
+                                            borderColor: isSelected
+                                                ? ColorStyles.mainBlue
+                                                : ColorStyles.borderGrey,
+                                            onReplyClick: () {
+                                              _onReplyClick(comment.commentId);
+                                            },
+                                            userId: studentId,
+                                            commenterId: comment.userId.toString(),
+                                            commentId: comment.commentId,
+                                            onDeleteClick: (commentId) {
+                                              _deleteComment(commentId);
+                                              _fetchComments(); // 댓글 동기화
+                                            },
+                                          )
+                                              : RoundReply(
+                                            nickname: comment.nickname ?? '',
+                                            body: comment.body,
+                                            createdAt: comment.createdAt,
+                                            userId: studentId,
+                                            commenterId: comment.userId.toString(),
+                                            commentId: comment.commentId,
+                                            onDeleteClick: (commentId) {
+                                              _deleteComment(commentId);
+                                              _fetchComments(); // 댓글 동기화
+                                            },
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -393,18 +383,14 @@ class _PostPageState extends State<PostPage> {
                     constraints: const BoxConstraints(
                       maxHeight: 100, // 최대 높이 설정
                     ),
-                    child: Scrollbar(
-                      // 스크롤바 추가
+                    child: Scrollbar( // 스크롤바 추가
                       child: SingleChildScrollView(
                         child: TextField(
                           controller: _commentController,
                           focusNode: _focusNode,
-                          maxLines: null,
-                          // null로 설정하면 줄바꿈에 따라 자동으로 늘어남
-                          minLines: 1,
-                          // 최소 줄 수
-                          keyboardType: TextInputType.multiline,
-                          // 여러 줄 입력 가능
+                          maxLines: null, // null로 설정하면 줄바꿈에 따라 자동으로 늘어남
+                          minLines: 1, // 최소 줄 수
+                          keyboardType: TextInputType.multiline, // 여러 줄 입력 가능
                           decoration: InputDecoration(
                             hintText: '댓글을 입력하세요',
                             contentPadding: const EdgeInsets.symmetric(
@@ -421,8 +407,7 @@ class _PostPageState extends State<PostPage> {
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
                               borderSide: BorderSide(
-                                color: ColorStyles.mainBlue,
-                                // 클릭(포커스) 시 테두리 색상 변경
+                                color: ColorStyles.mainBlue, // 클릭(포커스) 시 테두리 색상 변경
                                 width: 1.5,
                               ),
                             ),
@@ -520,7 +505,7 @@ class _PostPageState extends State<PostPage> {
           text: "편집하기",
           onTap: () {
             Navigator.pop(context); // 메뉴 닫기
-            _pushPostIdForEdit();
+            _pushForEdit();
           },
         ),
         // 구분선
@@ -778,13 +763,13 @@ class _PostPageState extends State<PostPage> {
   }
 
   // 편집하기
-  void _pushPostIdForEdit() {
+  void _pushForEdit() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => WritePage(type: widget.type),
         settings: RouteSettings(
-          arguments: widget.post_id, // 전달할 데이터
+          arguments: {'post_id': widget.post_id}, // 전달할 데이터
         ),
       ),
     );
