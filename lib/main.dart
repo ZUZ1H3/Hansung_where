@@ -9,19 +9,11 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'LoginPage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// 백그라운드 메시지 처리 핸들러
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print("Handling a background message: ${message.messageId}");
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); //Flutter 엔진 초기화
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   ); //Firebase 초기화
-
-  //백그라운드 메시지 처리 등록
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   runApp(MyApp());
 }
@@ -84,45 +76,9 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
-    messaging = FirebaseMessaging.instance;
-
-    // 알림 권한 요청 (Android 13 이상)
-    FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    ).then((settings) {
-      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        print('알림 권한 허용됨');
-      } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-        print('임시 알림 권한 허용됨');
-      } else {
-        print('알림 권한 거부됨');
-      }
-    });
-
     // FCM 토큰 확인
     messaging.getToken().then((token) {
       print("FCM Token: $token");
-    });
-
-    // 앱이 포그라운드 상태일 때 알림 수신
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print("Foreground message received: ${message.notification?.title}");
-      // 앱 내에서 알림을 표시하거나 처리하는 로직 추가
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text(message.notification?.title ?? "알림"),
-          content: Text(message.notification?.body ?? ""),
-        ),
-      );
-    });
-
-    // 앱이 백그라운드에서 실행 중일 때 알림 클릭 처리
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print("Notification clicked!");
-      // 알림 클릭 시 화면 전환이나 다른 작업 추가
     });
 
     _initPrefs(); // SharedPreferences 초기화
