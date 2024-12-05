@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:hansung_where/theme/colors.dart';
 import 'mainPages/ChatPage.dart';
 import 'mainPages/HomePage.dart';
@@ -10,10 +12,14 @@ import 'LoginPage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); //Flutter 엔진 초기화
+  WidgetsFlutterBinding.ensureInitialized(); // Flutter 엔진 초기화
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
-  ); //Firebase 초기화
+  ); // Firebase 초기화
+
+  // 학교 SSL 인증서 로드
+  final data = await rootBundle.load('assets/certificates/school_certificate.pem');
+  SecurityContext.defaultContext.setTrustedCertificatesBytes(data.buffer.asUint8List());
 
   runApp(MyApp());
 }
@@ -31,7 +37,6 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: ColorStyles.seedColor,
         useMaterial3: true,
       ),
-      //home: PostPage(1, 'lost'),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
@@ -70,16 +75,9 @@ class _MyHomePageState extends State<MyHomePage> {
     ),
   ];
 
-  late FirebaseMessaging messaging;
-
   @override
   void initState() {
     super.initState();
-
-    // FCM 토큰 확인
-    messaging.getToken().then((token) {
-      print("FCM Token: $token");
-    });
 
     _initPrefs(); // SharedPreferences 초기화
   }
@@ -95,16 +93,17 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     final isLogIn = prefs!.getBool('isLogIn') ?? false;
 
-    if (isLogIn) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ChatPage()),
-      );
-    } else {
+    if (!isLogIn) {
+      // 로그인 화면으로 이동
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => LoginPage()),
       );
+    } else {
+      // 로그인 상태일 경우, 채팅 화면으로 이동
+      setState(() {
+        _selectedIndex = 2; // 채팅 화면을 표시
+      });
     }
   }
 
@@ -125,9 +124,10 @@ class _MyHomePageState extends State<MyHomePage> {
         currentIndex: _selectedIndex,
         showSelectedLabels: false,
         showUnselectedLabels: false,
-        onTap: (int index) {
-          if (index == 2) { // 채팅 메뉴 클릭 시
-            _moveChat(); // 로그인 여부에 따라 페이지 이동
+        onTap: (int index) async {
+          if (index == 2) {
+            // 채팅 메뉴 클릭 시
+            await _moveChat(); // 로그인 여부에 따라 페이지 이동
           } else {
             setState(() {
               _selectedIndex = index;
@@ -139,4 +139,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-

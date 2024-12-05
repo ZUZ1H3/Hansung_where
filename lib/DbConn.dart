@@ -1200,4 +1200,52 @@ class DbConn {
 
     return posts; // 연결을 닫지 않고 재사용
   }
+
+  // 메시지 가져오기 함수
+  static Future<List<Map<String, dynamic>>> fetchSamePostMessages() async {
+    final connection = await getConnection();
+    List<Map<String, dynamic>> messages = [];
+
+    try {
+      final result = await connection.execute(
+          '''
+          SELECT m.*, u.nickname, u.profile
+          FROM messages m
+          INNER JOIN (
+              SELECT post_id, MAX(createdAt) AS latest_message_time
+              FROM messages
+              GROUP BY post_id
+          ) latest_messages
+          ON m.post_id = latest_messages.post_id AND m.createdAt = latest_messages.latest_message_time
+          INNER JOIN users u ON m.sender_id = u.student_id;
+        '''
+      );
+
+      for (final row in result.rows) {
+        // sender_id 가져오기
+        final senderId = row.assoc()['sender_id']?.toString() ?? '';
+
+        // sender_id 기반으로 profileId와 nickname 가져오기
+        final profileId = await getProfileId(senderId); // profileId 가져오기
+        final nickname = await getNickname(senderId); // nickname 가져오기
+
+        // 메시지에 추가 정보 포함
+        final message = {
+          ...row.assoc(),
+          'profile': profileId,
+          'nickname': nickname,
+        };
+
+        messages.add(message);
+      }
+    } catch (e) {
+      print('Error fetching messages: $e');
+    } finally {
+      await connection.close();
+    }
+
+    return messages;
+  }
+
+
 }
