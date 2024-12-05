@@ -434,12 +434,25 @@ class _PostPageState extends State<PostPage> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    String newComment = _commentController.text.trim();
-                    if (newComment.isNotEmpty) {
-                      _addComment(newComment);
-                      replyClicked = false;
-                      selectedCommentId = null;
+                  onTap: () async {
+                    final userId = await getUserId();
+
+                    final bool isSuspended =
+                        await _checkUserSuspension(userId); // 정지 여부 확인
+
+                    if (isSuspended) {
+                      final suspendedUntil =
+                          await DbConn.getUserSuspensionStatus(
+                              userId); // 정지 해제 시간 가져오기
+                      _showSuspendedDialog(
+                          context, suspendedUntil!); // 정지 다이얼로그 표시
+                    } else {
+                      String newComment = _commentController.text.trim();
+                      if (newComment.isNotEmpty) {
+                        _addComment(newComment);
+                        replyClicked = false;
+                        selectedCommentId = null;
+                      }
                     }
                   },
                   child: Image.asset(
@@ -455,6 +468,33 @@ class _PostPageState extends State<PostPage> {
         ],
       ),
     );
+  }
+
+  //유저가 정지 상태인지 체크
+  Future<bool> _checkUserSuspension(int userId) async {
+    try {
+      final suspendedUntilStr =
+          await DbConn.getUserSuspensionStatus(userId); // 정지 상태 조회
+
+      if (suspendedUntilStr != null) {
+        final DateTime suspendedUntil =
+            DateTime.parse(suspendedUntilStr); // 문자열을 DateTime으로 변환
+        final DateTime now = DateTime.now(); // 현재 시간
+        print("현재: $now, 정지: $suspendedUntil");
+        if (suspendedUntil.isAfter(now)) {
+          return true; // 현재 시간보다 미래라면 정지 상태
+        } else {
+          final success = await DbConn.updateSuspendStatus(userId); // 정지 상태 해제
+          if (success) {
+            print("정지가 해제되었습니다."); // Toast 메시지 표시
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      print('정지 상태 확인 중 오류 발생: $e');
+      return false;
+    }
   }
 
   // 댓글 추가 로직
@@ -770,6 +810,59 @@ class _PostPageState extends State<PostPage> {
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: ColorStyles.mainBlue)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  //정지유저일 경우 다이얼로그
+  void _showSuspendedDialog(BuildContext context, String suspendedUntil) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12), // 모서리를 둥글게 설정
+            side: const BorderSide(
+              color: Colors.grey, // 회색 테두리
+              width: 1.5,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          // 흰색 배경
+          title: const Text(
+            '정지 상태',
+            style: TextStyle(
+              fontFamily: 'Neo', // Neo 폰트 적용
+              fontWeight: FontWeight.bold, // 굵은 텍스트
+              fontSize: 18,
+            ),
+          ),
+          content: Text(
+            '현재 정지 상태입니다.\n정지 해제 시간: $suspendedUntil',
+            style: const TextStyle(fontSize: 14),
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF042D6F), // 배경색 설정
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8), // 둥근 버튼
+                ),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 8), // 버튼 패딩
+              ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                '확인',
+                style: TextStyle(
+                  fontFamily: 'Neo', // Neo 폰트 적용
+                  fontSize: 14,
+                  color: Colors.white, // 흰색 텍스트
+                ),
+              ),
             ),
           ],
         );
