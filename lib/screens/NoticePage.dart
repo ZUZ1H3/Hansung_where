@@ -4,6 +4,7 @@ import 'WriteNoticePage.dart';
 import '/NoticePost.dart';
 import '/NoticePostCard.dart';
 import '../DbConn.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NoticePage extends StatefulWidget {
   @override
@@ -11,6 +12,21 @@ class NoticePage extends StatefulWidget {
 }
 
 class _NoticePageState extends State<NoticePage> {
+  SharedPreferences? prefs;
+  String currentUserId = ""; // 현재 접속 중인 사용자 ID
+
+  @override
+  void initState() {
+    super.initState();
+    _initPref();
+  }
+
+  // SharedPreferences 초기화
+  Future<void> _initPref() async {
+    prefs = await SharedPreferences.getInstance();
+    currentUserId = prefs?.getString('studentId') ?? "";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,19 +52,21 @@ class _NoticePageState extends State<NoticePage> {
                   '공지사항',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => WriteNoticePage()), // 펜 아이콘 클릭 시 WriteNoticePage로 이동
-                    );
-                  },
-                  child: Image.asset(
-                    'assets/icons/ic_pen.png',
-                    width: 18,
-                    height: 18,
-                  ),
-                ),
+                currentUserId == 0
+                ? GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => WriteNoticePage()), // 펜 아이콘 클릭 시 WriteNoticePage로 이동
+                      );
+                    },
+                    child: Image.asset(
+                      'assets/icons/ic_pen.png',
+                      width: 18,
+                      height: 18,
+                    ),
+                  )
+                : SizedBox(width: 30),
               ],
             ),
             const SizedBox(height: 20),

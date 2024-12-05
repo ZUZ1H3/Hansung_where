@@ -6,7 +6,7 @@ import '../Post.dart';
 
 class MyComment extends StatefulWidget {
   final int userId; // 현재 사용자의 ID
-  final String postType; // 게시물의 유형 (예: "found" 또는 "lost")
+  final String postType; // 게시물의 유형
 
   const MyComment({required this.userId, required this.postType, Key? key}) : super(key: key);
 
