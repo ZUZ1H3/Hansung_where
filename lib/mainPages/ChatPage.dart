@@ -12,11 +12,13 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   List<Map<String, dynamic>> chatList = [];
+  int currentStudentId = -1; // 현재 접속 중인 user Id
   Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
+    initStudentId();
     loadMessages(); // 초기 데이터 로드
     _startAutoRefresh();
   }
@@ -27,11 +29,15 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
+  Future<void> initStudentId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      currentStudentId = int.tryParse(prefs.getString('studentId') ?? '') ?? 1;
+    });
+  }
+
   // DB에서 메시지 가져오기
   Future<void> loadMessages() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    int currentStudentId = int.tryParse(prefs.getString('studentId') ?? '') ?? 1;
-
     final messages = await DbConn.fetchSamePostMessages(currentStudentId: currentStudentId);
 
     setState(() { // 최신 메시지가 상단에 위치
@@ -101,29 +107,39 @@ class _ChatPageState extends State<ChatPage> {
                         final postId = int.tryParse(chat['post_id'].toString()) ?? 0;
                         final receiverId = int.tryParse(chat['receiver_id'].toString()) ?? -1;
 
+                        // 메시지 읽음 처리
+                        await DbConn.markMessagesAsRead(currentStudentId: currentStudentId, postId: postId);
+
                         // postTitle 가져오기
                         final postTitle = await DbConn.getPostTitleById(postId: postId);
 
                         // Navigator로 Chatting 페이지로 이동
-                        Navigator.push(
+                        final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => Chatting(
                               postTitle: postTitle ?? '제목 없음', // null 처리
                               receiverNickname: chat['nickname'],
-                              postId: postId, // int 타입
-                              receiverId: receiverId, // int 타입
+                              postId: postId,
+                              receiverId: receiverId,
                             ),
                           ),
                         );
+
+                        // Navigator.pop 이후 새로고침
+                        if (result == true) {
+                          await loadMessages();
+                        }
                       },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 5),
                         child: buildMessageBox(
-                          avatar: _getProfileImagePath(int.tryParse(chat['profile']?.toString() ?? '') ?? 1),
+                          avatar: _getProfileImagePath(
+                            int.tryParse(chat['profile']?.toString() ?? '') ?? 1,
+                          ),
                           nickname: chat['nickname'] ?? '',
                           message: chat['message'] ?? '',
-                          badgeCount: 0,
+                          badgeCount: int.tryParse(chat['unread_count']?.toString() ?? '0') ?? 0, // unread_count 전달
                         ),
                       ),
                     );
@@ -157,7 +173,7 @@ class _ChatPageState extends State<ChatPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.only(top: 7, left: 4), // 아바타 위치 조정
+            padding: EdgeInsets.only(top: 7, left: 4), // 프로필 위치 조정
             child: CircleAvatar(
               backgroundImage: AssetImage(avatar),
               radius: 27.5,

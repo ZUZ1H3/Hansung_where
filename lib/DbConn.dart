@@ -1224,7 +1224,13 @@ class DbConn {
           CASE 
               WHEN m.sender_id = :currentStudentId THEN u_receiver.profile
               WHEN m.receiver_id = :currentStudentId THEN u_sender.profile
-          END AS profile
+          END AS profile,
+          -- 읽지 않은 메시지 개수 추가
+          (SELECT COUNT(*) 
+           FROM messages 
+           WHERE post_id = m.post_id 
+             AND receiver_id = :currentStudentId 
+             AND isRead = FALSE) AS unread_count
       FROM messages m
       INNER JOIN (
           SELECT post_id, MAX(createdAt) AS latest_message_time
@@ -1253,6 +1259,26 @@ class DbConn {
     }
 
     return messages;
+  }
+
+  // 메시지 읽음 처리
+  static Future<void> markMessagesAsRead({required int currentStudentId, required int postId}) async {
+    final connection = await getConnection();
+
+    try {
+      await connection.execute(
+        '''
+      UPDATE messages
+      SET isRead = TRUE
+      WHERE receiver_id = :currentStudentId AND post_id = :postId;
+      ''',
+        {'currentStudentId': currentStudentId, 'postId': postId},
+      );
+    } catch (e) {
+      print('Error marking messages as read: $e');
+    } finally {
+      await connection.close();
+    }
   }
 
   // 최신 createdAt 값 가져오기
