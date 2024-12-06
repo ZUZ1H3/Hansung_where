@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'theme/colors.dart';
 import 'package:hansung_where/screens/PostPage.dart';
 import 'Post.dart';
 

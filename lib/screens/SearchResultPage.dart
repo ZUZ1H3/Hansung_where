@@ -70,7 +70,7 @@ class _SearchResultState extends State<SearchResult> {
 
   Future<List<Post>> _fetchSearchResults(String keyword) async {
     try {
-      List<Post> posts = await DbConn.fetchPosts(type: 'found');
+      List<Post> posts = await DbConn.fetchPosts(type: '');
       return posts.where((post) {
         final matchesKeyword =
             post.title.contains(keyword) || post.body.contains(keyword);
@@ -142,6 +142,7 @@ class _SearchResultState extends State<SearchResult> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SizedBox(height: 13.5),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -157,12 +158,12 @@ class _SearchResultState extends State<SearchResult> {
 
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? const Color(0xFF042D6F)
                           : Colors.transparent,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       tag,
@@ -176,8 +177,8 @@ class _SearchResultState extends State<SearchResult> {
               }).toList(),
             ),
           ),
+          SizedBox(height: 13.5),
           Expanded(
-
             child: FutureBuilder<List<Post>>(
               future: searchResults,
               builder: (context, snapshot) {
