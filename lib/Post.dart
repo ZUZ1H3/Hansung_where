@@ -4,8 +4,7 @@ class Post {
   final int postId;
   final String title;
   final String body;
-  final String displayTime;
-  final DateTime createdAt;
+  final String createdAt;
   final int userId;
   final String? imageUrl1;
   final String? imageUrl2;
@@ -17,7 +16,6 @@ class Post {
     required this.postId,
     required this.title,
     required this.body,
-    required this.displayTime,
     required this.createdAt,
     required this.userId,
     this.imageUrl1,

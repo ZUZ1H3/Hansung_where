@@ -123,7 +123,7 @@ class _NoticePostPageState extends State<NoticePostPage> {
                       RoundPost(
                         profile: profilePath,
                         nickname: managerNickname,
-                        displayTime: createdAt,
+                        createdAt: createdAt,
                         title: title,
                         body: body,
                         isNotice: true, // 공지사항 플래그
