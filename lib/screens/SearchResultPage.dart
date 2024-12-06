@@ -70,7 +70,7 @@ class _SearchResultState extends State<SearchResult> {
 
   Future<List<Post>> _fetchSearchResults(String keyword) async {
     try {
-      List<Post> posts = await DbConn.fetchPosts(type: '');
+      List<Post> posts = await DbConn.fetchAllPosts();
       return posts.where((post) {
         final matchesKeyword =
             post.title.contains(keyword) || post.body.contains(keyword);
