@@ -1031,12 +1031,12 @@ class DbConn {
       for (final row in result.rows) {
         final message = Message(
           messageId:
-          int.tryParse(row.assoc()['message_id']?.toString() ?? '') ?? 0,
+              int.tryParse(row.assoc()['message_id']?.toString() ?? '') ?? 0,
           senderId:
-          int.tryParse(row.assoc()['sender_id']?.toString() ?? '') ?? 0,
+              int.tryParse(row.assoc()['sender_id']?.toString() ?? '') ?? 0,
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           receiverId:
-          int.tryParse(row.assoc()['receiver_id']?.toString() ?? '') ?? 0,
+              int.tryParse(row.assoc()['receiver_id']?.toString() ?? '') ?? 0,
           message: row.assoc()['message'] ?? '',
           createdAt: row.assoc()['createdAt'] ?? '',
           senderProfileId: row.assoc()['senderProfileId'],
@@ -1208,7 +1208,8 @@ class DbConn {
 
   // 현재 접속 중인 유저 Id 가 sender_id와 동일할 때는 receiver_id 값의 users 테이블 정보를 불러오고
   // receiver_id와 동일할 때는 sender_id 값의 users 테이블 정보를 불러 옴
-  static Future<List<Map<String, dynamic>>> fetchSamePostMessages({required int currentStudentId}) async {
+  static Future<List<Map<String, dynamic>>> fetchSamePostMessages(
+      {required int currentStudentId}) async {
     final connection = await getConnection();
     List<Map<String, dynamic>> messages = [];
 
@@ -1262,7 +1263,8 @@ class DbConn {
   }
 
   // 메시지 읽음 처리
-  static Future<void> markMessagesAsRead({required int currentStudentId, required int postId}) async {
+  static Future<void> markMessagesAsRead(
+      {required int currentStudentId, required int postId}) async {
     final connection = await getConnection();
 
     try {
@@ -1297,7 +1299,8 @@ class DbConn {
       );
 
       if (result.rows.isNotEmpty) {
-        formattedDate = result.rows.first.assoc()['latestCreatedAt']?.toString();
+        formattedDate =
+            result.rows.first.assoc()['latestCreatedAt']?.toString();
       }
     } catch (e) {
       print('최신 createdAt 가져오기 실패: $e');
@@ -1322,7 +1325,9 @@ class DbConn {
       FROM posts 
       WHERE post_id = :postId
       ''',
-        {'postId': postId,},
+        {
+          'postId': postId,
+        },
       );
 
       // 결과 처리
@@ -1358,9 +1363,12 @@ class DbConn {
     required int postId,
     required String title,
     required String body,
+    String? imageUrl1,
+    String? imageUrl2,
+    String? imageUrl3,
+    String? imageUrl4,
     required String placeKeyword,
     required String thingKeyword,
-    required List<String?> images, // 최대 4개의 이미지 URL 리스트
   }) async {
     final connection = await getConnection();
 
@@ -1373,10 +1381,10 @@ class DbConn {
         body = :body, 
         place_keyword = :placeKeyword, 
         thing_keyword = :thingKeyword,
-        image_url1 = :image1,
-        image_url2 = :image2,
-        image_url3 = :image3,
-        image_url4 = :image4
+        image_url1 = :imageUrl1,
+        image_url2 = :imageUrl2,
+        image_url3 = :imageUrl3,
+        image_url4 = :imageUrl4
       WHERE post_id = :postId
       ''',
         {
@@ -1384,10 +1392,10 @@ class DbConn {
           'body': body,
           'placeKeyword': placeKeyword,
           'thingKeyword': thingKeyword,
-          'image1': images.isNotEmpty ? images[0] : null, // 첫 번째 이미지
-          'image2': images.length > 1 ? images[1] : null, // 두 번째 이미지
-          'image3': images.length > 2 ? images[2] : null, // 세 번째 이미지
-          'image4': images.length > 3 ? images[3] : null, // 네 번째 이미지
+          'imageUrl1': imageUrl1,
+          'imageUrl2': imageUrl2,
+          'imageUrl3': imageUrl3,
+          'imageUrl4': imageUrl4,
           'postId': postId,
         },
       );
@@ -1399,5 +1407,4 @@ class DbConn {
       await connection.close();
     }
   }
-
 }

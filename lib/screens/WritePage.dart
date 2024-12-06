@@ -99,26 +99,17 @@ class _WritePageState extends State<WritePage> {
       List<File> imageFiles = selectedImages.whereType<File>().toList();
 
       if (postId != 0) {
-        // postId가 존재하면 게시물 업데이트
-        final success = await DbConn.updatePost(
+        final postUploader = PostUploader();
+
+        await postUploader.updatePostWithImages(
           postId: postId,
           title: titleController.text,
           body: contentController.text,
+          selectedImages: selectedImages, // 선택된 이미지 리스트
           placeKeyword: selectedPlace,
           thingKeyword: selectedKeyword,
-          images: imageUrls,
+          context: context,
         );
-
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('게시물이 성공적으로 업데이트되었습니다.')),
-          );
-          Navigator.pop(context); // 페이지 닫기
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('게시물 업데이트 중 오류가 발생했습니다.')),
-          );
-        }
       } else { // postId가 없으면 새 게시물 등록
         await _postUploader.uploadImagesAndSavePost(
           title: titleController.text,
