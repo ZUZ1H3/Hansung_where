@@ -79,7 +79,6 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9FB),
       appBar: PreferredSize(
         preferredSize: Size.fromHeight(70),
         child: CustomSearchBar(
@@ -158,46 +157,58 @@ class _SearchPageState extends State<SearchPage> {
             if (recentSearches.isNotEmpty)
               Column(
                 children: recentSearches.map((search) {
+                  bool isPlace = places.contains(search);
                   return Column(
                     children: [
-                      ListTile(
-                        leading: Image.asset(
-                          'assets/icons/ic_recent.png',
-                          color: Colors.black,
-                          width: 20, // 아이콘 크기 조정
-                          height: 20, // 아이콘 크기 조정
-                        ),
-                        title: Text(
-                          search,
-                          style: TextStyle(
-                            fontSize: 12, // 글자 크기
-                            color: Colors.black, // 글자 색상
-                            fontFamily: 'Neo',
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            isPlace
+                                ? 'assets/icons/ic_placePin.png'
+                                : 'assets/icons/ic_search.png',
+                            color: Colors.black,
+                            width: 15,
+                            height: 15,
                           ),
-                        ),
-                        trailing: IconButton(
-                          icon:  Image.asset(
-                            'assets/icons/ic_x.png',
-                            color: Color(0xFFE0E0E0),
-                            width: 10, // 아이콘 크기 조정
-                            height: 10, // 아이콘 크기 조정
+                          SizedBox(width: 10), // 아이콘과 글자 사이 간격
+                          GestureDetector(
+                            onTap: () {
+                              navigateToSearchResult(search);
+                            },
+                            child: Text(
+                              search,
+                              style: TextStyle(
+                                fontSize: 12, // 글자 크기
+                                color: Colors.black, // 글자 색상
+                                fontFamily: 'Neo',
+                              ),
+                            ),
                           ),
-                          onPressed: () {
-                            setState(() {
-                              recentSearches.remove(search);
-                            });
-                            saveRecentSearches();
-                          },
-                        ),
-                        onTap: () {
-                          navigateToSearchResult(search);
-                        },
+                          Spacer(), // 빈 공간 추가하여 오른쪽 정렬
+                          IconButton(
+                            padding: EdgeInsets.zero, // IconButton 패딩 제거
+                            constraints: BoxConstraints(), // 기본 여백 및 크기 제한 제거
+                            icon: Image.asset(
+                              'assets/icons/ic_x.png',
+                              width: 10, // 아이콘 크기 조정
+                              height: 10, // 아이콘 크기 조정
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                recentSearches.remove(search);
+                              });
+                              saveRecentSearches();
+                            },
+                          ),
+                        ],
                       ),
                       Divider(
                         color: Color(0xFFE0E0E0), // 구분선 색상을 E0E0E0로 설정
                         thickness: 1, // 구분선 두께
-                        indent: 10, // 왼쪽 여백
-                        endIndent: 10, // 오른쪽 여백
+                        indent: 0, // 왼쪽 여백 제거
+                        endIndent: 0, // 오른쪽 여백 제거
+                        height: 0, // 구분선과 ListTile 사이 간격 제거
                       ),
                     ],
                   );
@@ -217,4 +228,29 @@ class _SearchPageState extends State<SearchPage> {
       ),
     );
   }
+
+  // 장소 리스트
+  List<String> places = [
+    "원스톱",
+    "학식당",
+    "학술정보관",
+    "상상빌리지",
+    "상상파크",
+    "상파플",
+    "상상관",
+    "미래관",
+    "공학관",
+    "우촌관",
+    "탐구관",
+    "인성관",
+    "창의관",
+    "낙산관",
+    "진리관",
+    "ROTC",
+    "학송관",
+    "연구관",
+    "지선관",
+    "체육관",
+    "기타"
+  ];
 }

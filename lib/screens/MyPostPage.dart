@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/colors.dart';
 import '../DbConn.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../PostCard.dart';
