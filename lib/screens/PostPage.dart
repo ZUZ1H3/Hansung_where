@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../local_push_notification.dart';
 import '../theme/colors.dart';
@@ -163,10 +165,21 @@ class _PostPageState extends State<PostPage> with RouteAware  {
         final latestComment = comments.last;
 
         // 본인이 작성한 댓글일 경우 알림 제외
-        if (latestComment.userId.toString() == studentId) {
-          print("본인이 작성한 댓글이므로 알림 제외");
-          return; // 푸시 알림 전송하지 않음
-        }
+        //if (latestComment.userId.toString() == studentId) {
+        //  print("본인이 작성한 댓글이므로 알림 제외");
+        //  return; // 푸시 알림 전송하지 않음
+        //}
+
+        // 알림 생성
+        final newNotification = {
+          'type': 'comment',
+          'title': "댓글이 달렸습니다",
+          'content': '새 댓글: "${latestComment.body}"',
+          'date': _getCurrentDateTime(),
+        };
+
+        // 저장된 알림 내역 업데이트
+        await _saveNotification(newNotification);
 
         // 알림 전송
         await LocalPushNotifications.showSimpleNotification(
@@ -182,6 +195,22 @@ class _PostPageState extends State<PostPage> with RouteAware  {
       print("Error checking new comments: $e");
     }
   }
+
+  Future<void> _saveNotification(Map<String, dynamic> notification) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedNotifications = prefs.getString('notifications') ?? '[]';
+    final List<Map<String, dynamic>> notifications =
+    List<Map<String, dynamic>>.from(json.decode(savedNotifications));
+
+    notifications.insert(0, notification); // 최신 알림을 맨 앞에 추가
+    await prefs.setString('notifications', json.encode(notifications));
+  }
+
+  String _getCurrentDateTime() {
+    final now = DateTime.now();
+    return "${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+  }
+
 
   // 게시물 삭제하기
   void _deletePost(int postId) async {
