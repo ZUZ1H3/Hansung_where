@@ -12,8 +12,10 @@ android {
     namespace = "com.example.hansung_where"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+    compileSdkVersion 34 //34로 수정-알림때문에
 
     compileOptions {
+        coreLibraryDesugaringEnabled true //플러그인 비활성화
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
@@ -50,6 +52,8 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
 
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version" //새로추가
     implementation platform('com.google.firebase:firebase-bom:32.2.2') // Firebase BOM
     implementation 'com.google.firebase:firebase-messaging' // Firebase Messaging
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2' //notification때문에 추가
 }

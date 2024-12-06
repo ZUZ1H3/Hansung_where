@@ -1,10 +1,12 @@
 import 'package:mysql_client/mysql_client.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'Post.dart'; // Post 모델 임포트
 import 'Comment.dart';
 import 'NoticePost.dart'; // Post 모델 임포트
 import 'Report.dart';
 import 'Message.dart';
+import 'local_push_notification.dart';
 
 class DbConn {
   static MySQLConnection? _connection;
@@ -1309,6 +1311,44 @@ class DbConn {
     }
 
     return formattedDate;
+  }
+
+  static Future<void> checkNewComments(int userId) async {
+    try {
+      final connection = await getConnection();
+      final prefs = await SharedPreferences.getInstance();
+
+      final postResults = await connection.execute(
+        '''
+      SELECT post_id FROM posts WHERE user_id = :userId
+      ''',
+        {'userId': userId},
+      );
+
+      final postIds = postResults.rows.map((row) => row.assoc()['post_id']).toList();
+      for (var postId in postIds) {
+        int savedCommentCount = prefs.getInt('comment_count_$postId') ?? 0;
+        final commentResults = await connection.execute(
+          '''
+        SELECT COUNT(*) AS count FROM comments WHERE post_id = :postId
+        ''',
+          {'postId': postId},
+        );
+
+        int currentCommentCount = int.parse(commentResults.rows.first.assoc()['count'] ?? '0');
+        if (currentCommentCount > savedCommentCount) {
+          await LocalPushNotifications.showSimpleNotification(
+            title: "새로운 댓글 알림",
+            body: "게시물에 새로운 댓글이 추가되었습니다.",
+            payload: postId.toString(),
+          );
+
+          prefs.setInt('comment_count_$postId', currentCommentCount);
+        }
+      }
+    } catch (e) {
+      print("Error checking new comments: $e");
+    }
   }
 
   // posts 테이블에서 데이터 가져오기
