@@ -219,7 +219,6 @@ class DbConn {
         FROM posts 
         WHERE type = 'found' 
         AND place_keyword = :placeKeyword
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
       ''',
         {'placeKeyword': placeKeyword},
       );
