@@ -20,11 +20,6 @@ class LocalPushNotifications {
     final payload = notificationResponse.payload;
     if (payload != null) {
       notificationStream.add(payload);
-      // 알림을 탭하면 해당 게시물 페이지로 이동
-      navagatorKey.currentState?.pushNamed(
-        '/message', // MessagePage로 이동 (routes에서 정의된 경로)
-        arguments: payload, // payload 전달
-      );
     }
   }
 
