@@ -58,9 +58,6 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: SplashScreen(),
-      routes: {
-        '/message':(context) => const MessagePage(),
-      },
     );
   }
 }
@@ -151,8 +148,6 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _initPrefs(); // SharedPreferences 초기화
-    _checkCommentsOnAppStart(); // 댓글 확인 추가
-    //_startCommentCheckTimer(); // 타이머 시작
   }
 
   @override
@@ -161,58 +156,9 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  // 타이머 시작
-  void _startCommentCheckTimer() {
-    _timer = Timer.periodic(Duration(minutes: 5), (timer) async {
-      await _checkCommentsPeriodically(); // 주기적으로 댓글 확인
-    });
-  }
-
-  // 주기적으로 댓글 확인
-  Future<void> _checkCommentsPeriodically() async {
-    try {
-      print("Checking comments periodically...");
-      if (prefs == null) {
-        await _initPrefs(); // SharedPreferences 초기화
-      }
-
-      final studentId = prefs?.getString('studentId');
-      if (studentId == null) {
-        print("Error: Student ID is null.");
-        return;
-      }
-
-      final userId = int.tryParse(studentId);
-      if (userId == null) {
-        print("Error: Invalid user ID.");
-        return;
-      }
-
-      print("Valid user ID: $userId");
-      await DbConn.checkNewComments(userId);
-    } catch (e) {
-      print("Error during periodic check: $e");
-    }
-  }
-
   Future<void> _initPrefs() async {
     prefs = await SharedPreferences.getInstance();
     setState(() {}); // 상태 갱신
-  }
-
-  // 앱 시작 시 댓글 확인
-  Future<void> _checkCommentsOnAppStart() async {
-    if (prefs == null) {
-      await _initPrefs(); // SharedPreferences 초기화 완료 대기
-    }
-
-    final studentId = prefs?.getString('studentId');
-    if (studentId != null) {
-      final userId = int.tryParse(studentId);
-      if (userId != null) {
-        await DbConn.checkNewComments(userId); // 새 댓글 확인
-      }
-    }
   }
 
   Future<void> _moveChat() async {
