@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Post {
   final int postId;
   final String title;
@@ -10,7 +12,6 @@ class Post {
   final String? imageUrl4;
   final String? place;
   final String? thing;
-
   Post({
     required this.postId,
     required this.title,

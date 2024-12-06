@@ -221,7 +221,6 @@ class DbConn {
         FROM posts 
         WHERE type = 'found' 
         AND place_keyword = :placeKeyword
-        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
       ''',
         {'placeKeyword': placeKeyword},
       );
@@ -1409,4 +1408,65 @@ class DbConn {
       await connection.close();
     }
   }
+
+  static Future<List<Post>> fetchAllPosts({
+    String? placeKeyword,
+    String? thingKeyword,
+  }) async {
+    final connection = await getConnection();
+    List<Post> posts = [];
+
+    try {
+      String sql = '''
+    SELECT 
+      post_id,
+      title, 
+      body, 
+      created_at, 
+      user_id,
+      image_url1, 
+      place_keyword, 
+      thing_keyword 
+    FROM 
+      posts
+    ''';
+
+      if (placeKeyword != null) {
+        sql += " WHERE place_keyword = :placeKeyword";
+      }
+      if (thingKeyword != null) {
+        sql += placeKeyword == null ? " WHERE" : " AND";
+        sql += " thing_keyword = :thingKeyword";
+      }
+
+      sql += " ORDER BY created_at DESC";
+
+      final results = await connection.execute(sql, {
+        if (placeKeyword != null) 'placeKeyword': placeKeyword,
+        if (thingKeyword != null) 'thingKeyword': thingKeyword,
+      });
+
+      for (final row in results.rows) {
+        final rawCreatedAt = row.assoc()['created_at'];
+        final relativeTime = _calculateRelativeTime(rawCreatedAt);
+
+        posts.add(Post(
+          postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
+          title: row.assoc()['title'] ?? '',
+          body: row.assoc()['body'] ?? '',
+          createdAt: relativeTime,
+
+          userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
+          imageUrl1: row.assoc()['image_url1'],
+          place: row.assoc()['place_keyword'],
+          thing: row.assoc()['thing_keyword'],
+        ));
+      }
+    } catch (e) {
+      print('Error fetching posts: $e');
+    }
+
+    return posts;
+  }
+
 }

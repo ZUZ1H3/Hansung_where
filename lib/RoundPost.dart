@@ -87,8 +87,8 @@ class RoundPost extends StatelessWidget {
                 child: Text(
                   body,
                   style: TextStyle(fontSize: 12, color: Colors.black, height: 20 / 12),
-                  ),
                 ),
+              ),
             ),
           ),
           // 이미지
@@ -136,15 +136,15 @@ class RoundPost extends StatelessWidget {
             runSpacing: 8,
             children: keywords
                 .map((keyword) => Container(
-            padding: EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-            decoration: BoxDecoration(
-              color: Color(0xFFECECEC), // 키워드 배경색
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              "#$keyword",
-              style: TextStyle(fontSize: 12, color: Color(0xFF858585)),
-            ),
+              padding: EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+              decoration: BoxDecoration(
+                color: Color(0xFFECECEC), // 키워드 배경색
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                "#$keyword",
+                style: TextStyle(fontSize: 12, color: Color(0xFF858585)),
+              ),
             )).toList(),
           ),
         ],
