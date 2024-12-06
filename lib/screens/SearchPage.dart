@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../CustomSearcherBar.dart';
 import 'SearchResultPage.dart';
 import '../DbConn.dart'; // MySQL 연결을 위한 DbConn import
+import '../theme/colors.dart';
 
 class SearchPage extends StatefulWidget {
   @override
@@ -114,40 +115,44 @@ class _SearchPageState extends State<SearchPage> {
             Text(
               '실시간 검색어',
               style: TextStyle(
-                  fontSize: 14, fontFamily: 'Neo', fontWeight: FontWeight.bold),
+                  fontSize: 14, fontFamily: 'Neo', fontWeight: FontWeight.w900),
             ),
-            SizedBox(height: 8),
-            Wrap(
-              spacing: 8.0,
-              children: trendingKeywords.map((keyword) {
-                return ElevatedButton(
-                  onPressed: () {
-                    navigateToSearchResult(keyword);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF042D6F),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+            SizedBox(height: 7),
+            Padding(
+              padding: const EdgeInsets.only(left: 14), // 왼쪽에서 14만큼 이동
+              child: Wrap(
+                spacing: 8.0,
+                children: trendingKeywords.map((keyword) {
+                  return GestureDetector(
+                    onTap: () {
+                      navigateToSearchResult(keyword);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5.5),
+                      decoration: BoxDecoration(
+                        color: ColorStyles.mainBlue, // 배경색
+                        borderRadius: BorderRadius.circular(12), // 둥근 모서리
+                      ),
+                      child: Text(
+                        keyword,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12, // 글자 크기
+                          fontFamily: 'Neo',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 0), // 버튼 내부 패딩
-                  ),
-                  child: Text(
-                    keyword,
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12, // 글자 크기 축소 (선택적)
-                        fontFamily: 'Neo',
-                        fontWeight: FontWeight.bold),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
-            SizedBox(height: 28),
+
+            SizedBox(height: 26),
             Text(
               '최근 검색어',
               style: TextStyle(
-                  fontSize: 14, fontFamily: 'Neo', fontWeight: FontWeight.bold),
+                  fontSize: 14, fontFamily: 'Neo', fontWeight: FontWeight.w900),
             ),
             SizedBox(height: 8),
             if (recentSearches.isNotEmpty)
@@ -158,14 +163,14 @@ class _SearchPageState extends State<SearchPage> {
                       ListTile(
                         leading: Image.asset(
                           'assets/icons/ic_recent.png',
-                          color: Colors.grey, // 색상 적용 (선택 사항)
+                          color: Colors.black,
                           width: 20, // 아이콘 크기 조정
                           height: 20, // 아이콘 크기 조정
                         ),
                         title: Text(
                           search,
                           style: TextStyle(
-                            fontSize: 14, // 글자 크기
+                            fontSize: 12, // 글자 크기
                             color: Colors.black, // 글자 색상
                             fontFamily: 'Neo',
                           ),
@@ -173,9 +178,9 @@ class _SearchPageState extends State<SearchPage> {
                         trailing: IconButton(
                           icon:  Image.asset(
                             'assets/icons/ic_x.png',
-                            color: Colors.grey, // 색상 적용 (선택 사항)
-                            width: 20, // 아이콘 크기 조정
-                            height: 20, // 아이콘 크기 조정
+                            color: Color(0xFFE0E0E0),
+                            width: 10, // 아이콘 크기 조정
+                            height: 10, // 아이콘 크기 조정
                           ),
                           onPressed: () {
                             setState(() {
@@ -203,7 +208,7 @@ class _SearchPageState extends State<SearchPage> {
                 '최근 검색어가 없습니다.',
                 style: TextStyle(
                     color: Colors.grey,
-                    fontSize: 16,
+                    fontSize: 12,
                     fontFamily: 'Neo',
                     fontWeight: FontWeight.bold),
               ),
