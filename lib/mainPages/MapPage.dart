@@ -223,6 +223,7 @@ class _MapPageState extends State<MapPage> {
                                         return PostCard(
                                           post: posts[index],
                                           type: 'found',
+                                          isForMapPage: true,
                                         );
                                       },
                                     );

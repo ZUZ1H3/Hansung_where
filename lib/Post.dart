@@ -1,8 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Post {
   final int postId;
   final String title;
   final String body;
-  final String createdAt;
+  final String displayTime;
+  final DateTime createdAt;
   final int userId;
   final String? imageUrl1;
   final String? imageUrl2;
@@ -10,11 +13,11 @@ class Post {
   final String? imageUrl4;
   final String? place;
   final String? thing;
-
   Post({
     required this.postId,
     required this.title,
     required this.body,
+    required this.displayTime,
     required this.createdAt,
     required this.userId,
     this.imageUrl1,

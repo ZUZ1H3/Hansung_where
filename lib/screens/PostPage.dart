@@ -290,7 +290,8 @@ class _PostPageState extends State<PostPage> with RouteAware  {
                                 postId: widget.post_id,
                                 title: postData['title'] as String? ?? '제목 없음',
                                 body: postData['body'] as String? ?? '내용 없음',
-                                createdAt: postData['created_at'] as String? ?? '',
+                                displayTime: postData['created_at'] as String? ?? '',
+                                createdAt: DateTime.parse(postData['created_at'] ?? DateTime.now().toString()),
                                 userId: (postData['user_id'] != null)
                                     ? int.tryParse(postData['user_id'].toString()) ?? 0
                                     : 0,
@@ -309,7 +310,7 @@ class _PostPageState extends State<PostPage> with RouteAware  {
                                     RoundPost(
                                       profile: profilePath,
                                       nickname: userNickname,
-                                      createdAt: post.createdAt,
+                                      displayTime: post.displayTime,
                                       title: post.title,
                                       body: post.body,
                                       commentCnt: comments.length,

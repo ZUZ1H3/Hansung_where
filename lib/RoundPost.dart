@@ -4,7 +4,7 @@ import 'theme/colors.dart';
 class RoundPost extends StatelessWidget {
   final String profile; // 프로필 이미지 경로
   final String nickname; // 닉네임
-  final String createdAt; // 작성 시간
+  final String displayTime; // 작성 시간
   final String title; // 제목
   final String body; // 내용
   final int commentCnt; // 댓글 개수
@@ -16,7 +16,7 @@ class RoundPost extends StatelessWidget {
   const RoundPost({
     required this.profile,
     required this.nickname,
-    required this.createdAt,
+    required this.displayTime,
     required this.title,
     required this.body,
     this.commentCnt = 0, // 기본값 0
@@ -57,7 +57,7 @@ class RoundPost extends StatelessWidget {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    createdAt,
+                    displayTime,
                     style: TextStyle(fontSize: 12, color: Color(0xFF858585)),
                   ),
                 ],

@@ -221,6 +221,7 @@ class DbConn {
         FROM posts 
         WHERE type = 'found' 
         AND place_keyword = :placeKeyword
+        AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
       ''',
         {'placeKeyword': placeKeyword},
       );
@@ -280,7 +281,8 @@ class DbConn {
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           title: row.assoc()['title'] ?? '',
           body: row.assoc()['body'] ?? '',
-          createdAt: relativeTime,
+          displayTime: relativeTime,
+          createdAt: DateTime.parse(row.assoc()['created_at'] ?? DateTime.now().toString()),
           // 상대적 시간으로 변환된 값 사용
           userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
           imageUrl1: row.assoc()['image_url1'],
@@ -1091,7 +1093,8 @@ class DbConn {
           postId: int.parse(row.assoc()['post_id'] ?? '0'),
           title: row.assoc()['title'] ?? '',
           body: row.assoc()['body'] ?? '',
-          createdAt: _calculateRelativeTime(row.assoc()['created_at']),
+          displayTime: _calculateRelativeTime(row.assoc()['created_at']),
+          createdAt: DateTime.parse(row.assoc()['created_at'] ?? DateTime.now().toString()),
           userId: int.parse(row.assoc()['user_id'] ?? '0'),
           imageUrl1: row.assoc()['image_url1'],
           place: row.assoc()['place_keyword'],
@@ -1192,7 +1195,8 @@ class DbConn {
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           title: row.assoc()['title'] ?? '',
           body: row.assoc()['body'] ?? '',
-          createdAt: relativeTime,
+          displayTime: _calculateRelativeTime(row.assoc()['created_at']),
+          createdAt: DateTime.parse(row.assoc()['created_at'] ?? DateTime.now().toString()),
           // 상대적 시간으로 변환된 값 사용
           userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
           imageUrl1: row.assoc()['image_url1'],
