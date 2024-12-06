@@ -1458,7 +1458,9 @@ class DbConn {
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           title: row.assoc()['title'] ?? '',
           body: row.assoc()['body'] ?? '',
-          createdAt: relativeTime,
+          displayTime: relativeTime,
+          createdAt: DateTime.parse(row.assoc()['created_at'] ?? DateTime.now().toString()),
+
           userId: int.tryParse(row.assoc()['user_id']?.toString() ?? '') ?? 0,
           imageUrl1: row.assoc()['image_url1'],
           place: row.assoc()['place_keyword'],
