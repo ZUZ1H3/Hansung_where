@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../local_push_notification.dart';
 import '../theme/colors.dart';
 import '../DbConn.dart';
 import 'NotificationPage.dart';
@@ -63,6 +64,32 @@ class _PostPageState extends State<PostPage> {
     });
   }
 
+  //댓글 개수 체크
+  Future<void> _checkNewComments() async {
+    try {
+      bool success = await DbConn.saveComment(
+        postId: widget.post_id,
+        userId: int.parse(studentId),
+        body: "",
+        type: commentType,
+        parentCommentId: commentId,
+      );
+
+      if (success) {
+        _commentController.clear();
+        await _fetchComments(); // 댓글 목록 업데이트
+
+        // 댓글 추가 후 새 댓글 알림 확인
+        await DbConn.checkNewComments(int.parse(studentId));
+      } else {
+        print("Failed to add comment");
+      }
+    } catch (e) {
+      print("Error checking new comments: $e");
+    }
+  }
+
+
   //userId를 가져옴
   Future<int> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
@@ -107,17 +134,21 @@ class _PostPageState extends State<PostPage> {
   Future<void> _fetchComments() async {
     try {
       // 댓글 불러오기
-      final fetchedComments =
-          await DbConn.fetchComments(postId: widget.post_id);
+      final fetchedComments = await DbConn.fetchComments(postId: widget.post_id);
 
       // 각 댓글에 대해 닉네임을 추가
       for (var comment in fetchedComments) {
         final nickname = await DbConn.getNickname(comment.userId.toString());
         comment.nickname = nickname;
       }
+
       setState(() {
         comments = fetchedComments;
       });
+
+      // 새로운 댓글 확인 및 알림
+      await _checkNewComments();
+
     } catch (e) {
       print("Error fetching comments: \$e");
     }
@@ -470,7 +501,11 @@ class _PostPageState extends State<PostPage> {
 
       if (success) {
         _commentController.clear();
-        _fetchComments(); // 댓글 목록 업데이트
+        await _fetchComments(); // 댓글 목록 업데이트
+
+        // 로컬 댓글 개수 갱신
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setInt('comment_count_${widget.post_id}', comments.length);
       } else {
         print("Failed to add comment");
       }

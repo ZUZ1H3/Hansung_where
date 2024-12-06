@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:hansung_where/screens/NotificationPage.dart';
 import 'package:hansung_where/theme/colors.dart';
 import 'mainPages/ChatPage.dart';
 import 'mainPages/HomePage.dart';
 import 'mainPages/MapPage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'LoginPage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'local_push_notification.dart';
+import 'message_page.dart';
+import 'package:hansung_where/DbConn.dart';
+import 'dart:async';
+
+final navagatorKey = GlobalKey<NavigatorState>();
+FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Flutter 엔진 초기화
@@ -21,6 +29,17 @@ void main() async {
   final data = await rootBundle.load('assets/certificates/school_certificate.pem');
   SecurityContext.defaultContext.setTrustedCertificatesBytes(data.buffer.asUint8List());
 
+  //로컬 푸시 알림 초기화
+  await LocalPushNotifications.init();
+
+  //앱이 종료된 상태에서 푸시 알림을 탭할 때
+  final NotificationAppLaunchDetails? notificationAppLaunchDetails = await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+  if(notificationAppLaunchDetails?.didNotificationLaunchApp ?? false) {
+    Future.delayed(const Duration(seconds: 1), () {
+      navagatorKey.currentState!.pushNamed('/notification', arguments: notificationAppLaunchDetails?.notificationResponse?.payload);
+    });
+  }
+
   runApp(MyApp());
 }
 
@@ -30,6 +49,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navagatorKey,
       debugShowCheckedModeBanner: false, // DEBUG 제거
       theme: ThemeData(
         fontFamily: 'Neo',
@@ -38,6 +58,9 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      routes: {
+        '/message':(context) => const MessagePage(),
+      },
     );
   }
 }
@@ -52,6 +75,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  Timer? _timer; // 타이머 변수
+
   int _selectedIndex = 1;
   SharedPreferences? prefs;
   final List<Widget> _pages = [
@@ -78,13 +103,69 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-
     _initPrefs(); // SharedPreferences 초기화
+    _checkCommentsOnAppStart(); // 댓글 확인 추가
+    _startCommentCheckTimer(); // 타이머 시작
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel(); // 타이머 정리
+    super.dispose();
+  }
+
+  // 타이머 시작
+  void _startCommentCheckTimer() {
+    _timer = Timer.periodic(Duration(minutes: 1), (timer) async {
+      await _checkCommentsPeriodically(); // 주기적으로 댓글 확인
+    });
+  }
+
+  // 주기적으로 댓글 확인
+  Future<void> _checkCommentsPeriodically() async {
+    try {
+      print("Checking comments periodically...");
+      if (prefs == null) {
+        await _initPrefs(); // SharedPreferences 초기화
+      }
+
+      final studentId = prefs?.getString('studentId');
+      if (studentId == null) {
+        print("Error: Student ID is null.");
+        return;
+      }
+
+      final userId = int.tryParse(studentId);
+      if (userId == null) {
+        print("Error: Invalid user ID.");
+        return;
+      }
+
+      print("Valid user ID: $userId");
+      await DbConn.checkNewComments(userId);
+    } catch (e) {
+      print("Error during periodic check: $e");
+    }
   }
 
   Future<void> _initPrefs() async {
     prefs = await SharedPreferences.getInstance();
     setState(() {}); // 상태 갱신
+  }
+
+  // 앱 시작 시 댓글 확인
+  Future<void> _checkCommentsOnAppStart() async {
+    if (prefs == null) {
+      await _initPrefs(); // SharedPreferences 초기화 완료 대기
+    }
+
+    final studentId = prefs?.getString('studentId');
+    if (studentId != null) {
+      final userId = int.tryParse(studentId);
+      if (userId != null) {
+        await DbConn.checkNewComments(userId); // 새 댓글 확인
+      }
+    }
   }
 
   Future<void> _moveChat() async {
