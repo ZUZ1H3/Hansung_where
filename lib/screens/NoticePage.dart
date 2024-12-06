@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../local_push_notification.dart';
 import '../theme/colors.dart';
@@ -39,6 +41,17 @@ class _NoticePageState extends State<NoticePage> {
       final noticePosts = await DbConn.fetchNoticePosts();
 
       if (noticePosts.length > savedNoticeCount) {
+
+        final newNotification = {
+          'type': 'notice',
+          'title': '공지사항',
+          'content': '새로운 공지사항이 올라왔어요',
+          'date': _getCurrentDateTime(),
+        };
+
+        // 저장된 알림 내역 업데이트
+        await _saveNotification(newNotification);
+
         // 새 공지사항 알림 전송
         await LocalPushNotifications.showSimpleNotification(
           title: "새로운 공지사항",
@@ -54,6 +67,23 @@ class _NoticePageState extends State<NoticePage> {
       print("Error checking new notices: $e");
     }
   }
+
+  Future<void> _saveNotification(Map<String, dynamic> notification) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedNotifications = prefs.getString('notifications') ?? '[]';
+    final List<Map<String, dynamic>> notifications =
+    List<Map<String, dynamic>>.from(json.decode(savedNotifications));
+
+    notifications.insert(0, notification); // 최신 알림을 맨 앞에 추가
+    await prefs.setString('notifications', json.encode(notifications));
+  }
+
+  String _getCurrentDateTime() {
+    final now = DateTime.now();
+    return "${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
