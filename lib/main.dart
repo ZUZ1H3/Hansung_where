@@ -119,7 +119,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  Timer? _timer; // 타이머 변수
 
   int _selectedIndex = 1;
   SharedPreferences? prefs;
@@ -152,7 +151,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
-    _timer?.cancel(); // 타이머 정리
     super.dispose();
   }
 
