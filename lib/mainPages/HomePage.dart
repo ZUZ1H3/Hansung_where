@@ -28,7 +28,13 @@ class _HomePageState extends State<HomePage> with RouteAware {
   void initState() {
     super.initState();
     _initPrefs(); // SharedPreferences 초기화
-    _refreshPosts();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // RouteAware 등록
+    RouteObserver<ModalRoute>().subscribe(this, ModalRoute.of(context)!);
   }
 
   @override
@@ -245,15 +251,45 @@ class _HomePageState extends State<HomePage> with RouteAware {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('정지 상태'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12), // 모서리를 둥글게 설정
+            side: const BorderSide(
+              color: Colors.grey, // 회색 테두리
+              width: 1.5,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          // 흰색 배경
+          title: const Text(
+            '정지 상태',
+            style: TextStyle(
+              fontFamily: 'Neo', // Neo 폰트 적용
+              fontWeight: FontWeight.bold, // 굵은 텍스트
+              fontSize: 18,
+            ),
+          ),
           content: Text(
             '현재 정지 상태입니다.\n정지 해제 시간: $suspendedUntil',
             style: const TextStyle(fontSize: 14),
           ),
           actions: [
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF042D6F), // 배경색 설정
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8), // 둥근 버튼
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // 버튼 패딩
+              ),
               onPressed: () => Navigator.pop(context),
-              child: const Text('확인'),
+              child: const Text(
+                '확인',
+                style: TextStyle(
+                  fontFamily: 'Neo', // Neo 폰트 적용
+                  fontSize: 14,
+                  color: Colors.white, // 흰색 텍스트
+                ),
+              ),
             ),
           ],
         );

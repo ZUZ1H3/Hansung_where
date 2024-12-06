@@ -49,6 +49,8 @@ dependencies:
   cloud_firestore: ^5.5.0
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.0
+  path_provider: ^2.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -70,6 +72,7 @@ flutter:
     - assets/icons/
     - .env
     - assets/certificates/school_certificate.pem
+    - assets/mainLogo.png
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.

@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: ColorStyles.seedColor,
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: SplashScreen(),
       routes: {
         '/message':(context) => const MessagePage(),
       },
@@ -65,11 +65,58 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({Key? key}) : super(key: key);
+
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  double _opacity = 1.0; // 초기 투명도
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 1초 후 투명도를 0으로 변경
+    Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        _opacity = 0.0; // 투명도를 0으로 설정
+      });
+
+      // 애니메이션이 끝난 후 메인 화면으로 이동
+      Future.delayed(const Duration(seconds: 1), () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MyHomePage()),
+        );
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white, // 배경색
+      body: Center(
+        child: AnimatedOpacity(
+          duration: const Duration(seconds: 1), // 애니메이션 지속 시간
+          curve: Curves.easeInOut, // 부드러운 애니메이션
+          opacity: _opacity, // 투명도
+          child: Image.asset(
+            'assets/mainLogo.png', // SplashScreen 이미지
+            width: 152,
+            height: 98,
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }

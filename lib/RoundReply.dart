@@ -159,20 +159,12 @@ class RoundReply extends StatelessWidget {
         ] else ...[
           // 사용자 학번과 작성자 학번이 다를 경우
           _buildPopupMenuItem(
-            text: "쪽지 보내기",
-            onTap: () {
-              Navigator.pop(context); // 메뉴 닫기
-              _showToast("추가 예정");
-            },
-          ),
-          _buildDivider(marginTop: 2),
-          _buildPopupMenuItem(
             text: "> 신고하기",
             onTap: () {
               Navigator.pop(context); // 메뉴 닫기
               // 메뉴를 닫은 후에 신고 팝업을 열도록 수정
               _showReportPopupMenu(context);
-            }, paddingTop: 8,
+            }, paddingTop: 2,
           ),
         ],
       ],

@@ -139,7 +139,7 @@ class ReportCard extends StatelessWidget {
                         ),
                         children: [
                           TextSpan(
-                            text: '신고자: $reporterName',
+                            text: '악성 유저: $reporterName',
                             style: const TextStyle(
                               color: Color(0xFF042D6F),
                               fontWeight: FontWeight.bold,

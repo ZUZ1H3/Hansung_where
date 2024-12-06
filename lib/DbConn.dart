@@ -1033,12 +1033,12 @@ class DbConn {
       for (final row in result.rows) {
         final message = Message(
           messageId:
-          int.tryParse(row.assoc()['message_id']?.toString() ?? '') ?? 0,
+              int.tryParse(row.assoc()['message_id']?.toString() ?? '') ?? 0,
           senderId:
-          int.tryParse(row.assoc()['sender_id']?.toString() ?? '') ?? 0,
+              int.tryParse(row.assoc()['sender_id']?.toString() ?? '') ?? 0,
           postId: int.tryParse(row.assoc()['post_id']?.toString() ?? '') ?? 0,
           receiverId:
-          int.tryParse(row.assoc()['receiver_id']?.toString() ?? '') ?? 0,
+              int.tryParse(row.assoc()['receiver_id']?.toString() ?? '') ?? 0,
           message: row.assoc()['message'] ?? '',
           createdAt: row.assoc()['createdAt'] ?? '',
           senderProfileId: row.assoc()['senderProfileId'],
@@ -1210,7 +1210,8 @@ class DbConn {
 
   // 현재 접속 중인 유저 Id 가 sender_id와 동일할 때는 receiver_id 값의 users 테이블 정보를 불러오고
   // receiver_id와 동일할 때는 sender_id 값의 users 테이블 정보를 불러 옴
-  static Future<List<Map<String, dynamic>>> fetchSamePostMessages({required int currentStudentId}) async {
+  static Future<List<Map<String, dynamic>>> fetchSamePostMessages(
+      {required int currentStudentId}) async {
     final connection = await getConnection();
     List<Map<String, dynamic>> messages = [];
 
@@ -1226,7 +1227,13 @@ class DbConn {
           CASE 
               WHEN m.sender_id = :currentStudentId THEN u_receiver.profile
               WHEN m.receiver_id = :currentStudentId THEN u_sender.profile
-          END AS profile
+          END AS profile,
+          -- 읽지 않은 메시지 개수 추가
+          (SELECT COUNT(*) 
+           FROM messages 
+           WHERE post_id = m.post_id 
+             AND receiver_id = :currentStudentId 
+             AND isRead = FALSE) AS unread_count
       FROM messages m
       INNER JOIN (
           SELECT post_id, MAX(createdAt) AS latest_message_time
@@ -1257,6 +1264,27 @@ class DbConn {
     return messages;
   }
 
+  // 메시지 읽음 처리
+  static Future<void> markMessagesAsRead(
+      {required int currentStudentId, required int postId}) async {
+    final connection = await getConnection();
+
+    try {
+      await connection.execute(
+        '''
+      UPDATE messages
+      SET isRead = TRUE
+      WHERE receiver_id = :currentStudentId AND post_id = :postId;
+      ''',
+        {'currentStudentId': currentStudentId, 'postId': postId},
+      );
+    } catch (e) {
+      print('Error marking messages as read: $e');
+    } finally {
+      await connection.close();
+    }
+  }
+
   // 최신 createdAt 값 가져오기
   static Future<String?> fetchCreatedAtMessages({required int postId}) async {
     final connection = await getConnection();
@@ -1273,7 +1301,8 @@ class DbConn {
       );
 
       if (result.rows.isNotEmpty) {
-        formattedDate = result.rows.first.assoc()['latestCreatedAt']?.toString();
+        formattedDate =
+            result.rows.first.assoc()['latestCreatedAt']?.toString();
       }
     } catch (e) {
       print('최신 createdAt 가져오기 실패: $e');
@@ -1322,4 +1351,100 @@ class DbConn {
     }
   }
 
+  // posts 테이블에서 데이터 가져오기
+  static Future<Map<String, dynamic>?> loadPostData(int postId) async {
+    final connection = await getConnection();
+
+    try {
+      // SQL 쿼리 실행
+      final result = await connection.execute(
+        '''
+      SELECT 
+        title, body, place_keyword, thing_keyword,
+        image_url1, image_url2, image_url3, image_url4
+      FROM posts 
+      WHERE post_id = :postId
+      ''',
+        {
+          'postId': postId,
+        },
+      );
+
+      // 결과 처리
+      if (result.rows.isNotEmpty) {
+        final row = result.rows.first; // 첫 번째 결과 가져오기
+        return {
+          'title': row.colByName('title'),
+          'body': row.colByName('body'),
+          'place_keyword': row.colByName('place_keyword'),
+          'thing_keyword': row.colByName('thing_keyword'),
+          'image_urls': [
+            row.colByName('image_url1'),
+            row.colByName('image_url2'),
+            row.colByName('image_url3'),
+            row.colByName('image_url4'),
+          ].whereType<String>().toList(), // null 제거 후 리스트로 반환
+        };
+      }
+    } catch (e) {
+      // 에러 로그 출력
+      print('게시물 데이터 로드 실패: $e');
+    } finally {
+      // 데이터베이스 연결 닫기
+      await connection.close();
+    }
+
+    // 결과가 없을 경우 null 반환
+    return null;
+  }
+
+  // 게시물 업데이트
+  static Future<bool> updatePost({
+    required int postId,
+    required String title,
+    required String body,
+    String? imageUrl1,
+    String? imageUrl2,
+    String? imageUrl3,
+    String? imageUrl4,
+    required String placeKeyword,
+    required String thingKeyword,
+  }) async {
+    final connection = await getConnection();
+
+    try {
+      await connection.execute(
+        '''
+      UPDATE posts
+      SET 
+        title = :title, 
+        body = :body, 
+        place_keyword = :placeKeyword, 
+        thing_keyword = :thingKeyword,
+        image_url1 = :imageUrl1,
+        image_url2 = :imageUrl2,
+        image_url3 = :imageUrl3,
+        image_url4 = :imageUrl4
+      WHERE post_id = :postId
+      ''',
+        {
+          'title': title,
+          'body': body,
+          'placeKeyword': placeKeyword,
+          'thingKeyword': thingKeyword,
+          'imageUrl1': imageUrl1,
+          'imageUrl2': imageUrl2,
+          'imageUrl3': imageUrl3,
+          'imageUrl4': imageUrl4,
+          'postId': postId,
+        },
+      );
+      return true;
+    } catch (e) {
+      print('게시물 업데이트 실패: $e');
+      return false;
+    } finally {
+      await connection.close();
+    }
+  }
 }

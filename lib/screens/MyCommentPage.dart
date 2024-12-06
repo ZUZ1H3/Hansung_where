@@ -14,8 +14,11 @@ class MyComment extends StatefulWidget {
   _MyCommentState createState() => _MyCommentState();
 }
 
+enum SortOption { newest, oldest } // 정렬 기준: 최신순, 오래된 순
+
 class _MyCommentState extends State<MyComment> {
   late Future<List<Post>> _postsFuture;
+  SortOption _sortOption = SortOption.newest; // 기본 정렬 옵션: 최신순
 
   @override
   void initState() {
@@ -35,6 +38,15 @@ class _MyCommentState extends State<MyComment> {
       print("Error fetching posts with my comments: $e");
       return [];
     }
+  }
+
+  List<Post> _sortPosts(List<Post> posts) {
+    if (_sortOption == SortOption.newest) {
+      posts.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // 최신순
+    } else if (_sortOption == SortOption.oldest) {
+      posts.sort((a, b) => a.createdAt.compareTo(b.createdAt)); // 오래된 순
+    }
+    return posts;
   }
 
   @override
@@ -57,15 +69,38 @@ class _MyCommentState extends State<MyComment> {
                     AssetImage('assets/icons/ic_back.png'),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 98),
                 const Text(
                   '댓글 단 글',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Expanded(
+            const SizedBox(height: 10), // "댓글 단 글"과 정렬 버튼 사이의 여백
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(), // 최소 크기 제한 제거
+                  icon: const Icon(Icons.sort, size: 18),
+                  onPressed: () {
+                    setState(() {
+                      // 정렬 옵션 변경
+                      _sortOption = _sortOption == SortOption.newest
+                          ? SortOption.oldest
+                          : SortOption.newest;
+                    });
+                  },
+                ),
+                Text(
+                  '${_sortOption == SortOption.newest ? "오래된 순" : "최신 순"}',
+                  style: const TextStyle(fontSize: 14, color: Colors.black, fontFamily: 'Neo'),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: MediaQuery.of(context).size.height - 150, // 화면 높이에 맞게 설정
               child: FutureBuilder<List<Post>>(
                 future: _postsFuture,
                 builder: (context, snapshot) {
@@ -76,7 +111,7 @@ class _MyCommentState extends State<MyComment> {
                   } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     return const Center(child: Text('댓글 단 게시물이 없습니다.'));
                   } else {
-                    final posts = snapshot.data!;
+                    final posts = _sortPosts(snapshot.data!); // 정렬된 게시물
                     return ListView.builder(
                       itemCount: posts.length,
                       itemBuilder: (context, index) {

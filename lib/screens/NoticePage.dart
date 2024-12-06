@@ -24,7 +24,9 @@ class _NoticePageState extends State<NoticePage> {
   // SharedPreferences 초기화
   Future<void> _initPref() async {
     prefs = await SharedPreferences.getInstance();
-    currentUserId = prefs?.getString('studentId') ?? "";
+    setState(() {
+      currentUserId = prefs?.getString('studentId') ?? "";
+    });
   }
 
   @override
@@ -52,7 +54,7 @@ class _NoticePageState extends State<NoticePage> {
                   '공지사항',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                currentUserId == 0
+                currentUserId == "0000"
                 ? GestureDetector(
                     onTap: () {
                       Navigator.push(
