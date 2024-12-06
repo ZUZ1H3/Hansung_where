@@ -165,10 +165,10 @@ class _PostPageState extends State<PostPage> with RouteAware  {
         final latestComment = comments.last;
 
         // 본인이 작성한 댓글일 경우 알림 제외
-        //if (latestComment.userId.toString() == studentId) {
-        //  print("본인이 작성한 댓글이므로 알림 제외");
-        //  return; // 푸시 알림 전송하지 않음
-        //}
+        if (latestComment.userId.toString() == studentId) {
+          print("본인이 작성한 댓글이므로 알림 제외");
+          return; // 푸시 알림 전송하지 않음
+        }
 
         // 알림 생성
         final newNotification = {
