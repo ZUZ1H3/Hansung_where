@@ -1314,10 +1314,12 @@ class DbConn {
   }
 
   static Future<void> checkNewComments(int userId) async {
+    MySQLConnection? connection;
     try {
-      final connection = await getConnection();
+      connection = await getConnection();
       final prefs = await SharedPreferences.getInstance();
 
+      // 현재 사용자의 게시물 ID 가져오기
       final postResults = await connection.execute(
         '''
       SELECT post_id FROM posts WHERE user_id = :userId
@@ -1326,8 +1328,11 @@ class DbConn {
       );
 
       final postIds = postResults.rows.map((row) => row.assoc()['post_id']).toList();
+
       for (var postId in postIds) {
         int savedCommentCount = prefs.getInt('comment_count_$postId') ?? 0;
+
+        // 댓글 개수 가져오기
         final commentResults = await connection.execute(
           '''
         SELECT COUNT(*) AS count FROM comments WHERE post_id = :postId
@@ -1336,6 +1341,8 @@ class DbConn {
         );
 
         int currentCommentCount = int.parse(commentResults.rows.first.assoc()['count'] ?? '0');
+
+        // 댓글 개수가 증가했을 경우 푸시 알림 전송
         if (currentCommentCount > savedCommentCount) {
           await LocalPushNotifications.showSimpleNotification(
             title: "새로운 댓글 알림",
@@ -1343,11 +1350,18 @@ class DbConn {
             payload: postId.toString(),
           );
 
+          // SharedPreferences에 현재 댓글 개수 저장
           prefs.setInt('comment_count_$postId', currentCommentCount);
         }
       }
     } catch (e) {
       print("Error checking new comments: $e");
+    } finally {
+      // 연결 닫기
+      if (connection != null) {
+        await connection.close();
+        print("MySQL connection closed.");
+      }
     }
   }
 
