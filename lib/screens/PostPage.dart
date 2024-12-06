@@ -136,6 +136,7 @@ class _PostPageState extends State<PostPage> with RouteAware  {
         comments = fetchedComments;
       });
 
+      await _checkNewComments();
     } catch (e) {
       print("Error fetching comments: \$e");
     }
@@ -456,6 +457,39 @@ class _PostPageState extends State<PostPage> with RouteAware  {
         ],
       ),
     );
+  }
+
+  // 새로운 댓글 확인
+  Future<void> _checkNewComments() async {
+    try {
+      if (prefs == null) {
+        await _initPref(); // SharedPreferences 초기화
+      }
+      // 로컬에 저장된 댓글 개수 가져오기
+      final int savedCommentCount = prefs!.getInt('comment_count_${widget.post_id}') ?? 0;
+      // 현재 댓글 개수
+      final int currentCommentCount = comments.length;
+      // 댓글 개수가 증가한 경우
+      if (currentCommentCount > savedCommentCount) {
+        // 가장 최근 댓글 가져오기
+        final latestComment = comments.last;
+        // 본인이 작성한 댓글일 경우 알림 제외
+        if (latestComment.userId.toString() == studentId) {
+          print("본인이 작성한 댓글이므로 알림 제외");
+          return; // 푸시 알림 전송하지 않음
+        }
+        // 알림 전송
+        await LocalPushNotifications.showSimpleNotification(
+          title: "새로운 댓글 알림",
+          body: "귀하의 게시물에 새로운 댓글이 추가되었습니다.",
+          payload: "",
+        );
+        // 댓글 개수 저장
+        prefs!.setInt('comment_count_${widget.post_id}', currentCommentCount);
+      }
+    } catch (e) {
+      print("Error checking new comments: $e");
+    }
   }
 
   //유저가 정지 상태인지 체크
