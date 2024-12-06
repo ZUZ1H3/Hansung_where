@@ -172,7 +172,7 @@ class _PostPageState extends State<PostPage> with RouteAware  {
         await LocalPushNotifications.showSimpleNotification(
           title: "새로운 댓글 알림",
           body: "귀하의 게시물에 새로운 댓글이 추가되었습니다.",
-          payload: widget.post_id.toString(),
+          payload: "",
         );
 
         // 댓글 개수 저장

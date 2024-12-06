@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../local_push_notification.dart';
 import '../theme/colors.dart';
 import 'WriteNoticePage.dart';
 import '/NoticePost.dart';
@@ -14,6 +15,7 @@ class NoticePage extends StatefulWidget {
 class _NoticePageState extends State<NoticePage> {
   SharedPreferences? prefs;
   String currentUserId = ""; // 현재 접속 중인 사용자 ID
+  int savedNoticeCount = 0; // 저장된 공지사항 개수
 
   @override
   void initState() {
@@ -26,7 +28,31 @@ class _NoticePageState extends State<NoticePage> {
     prefs = await SharedPreferences.getInstance();
     setState(() {
       currentUserId = prefs?.getString('studentId') ?? "";
+      savedNoticeCount = prefs?.getInt('notice_count') ?? 0; // 저장된 공지사항 개수 불러오기
     });
+    _checkForNewNotices(); // 새 공지사항 확인
+  }
+
+  // 새 공지사항 확인
+  Future<void> _checkForNewNotices() async {
+    try {
+      final noticePosts = await DbConn.fetchNoticePosts();
+
+      if (noticePosts.length > savedNoticeCount) {
+        // 새 공지사항 알림 전송
+        await LocalPushNotifications.showSimpleNotification(
+          title: "새로운 공지사항",
+          body: "공지사항이 새로 추가되었습니다.",
+          payload: "", // 페이로드
+        );
+
+        // 새 공지사항 개수 저장
+        await prefs?.setInt('notice_count', noticePosts.length);
+        savedNoticeCount = noticePosts.length; // 로컬 변수 업데이트
+      }
+    } catch (e) {
+      print("Error checking new notices: $e");
+    }
   }
 
   @override
