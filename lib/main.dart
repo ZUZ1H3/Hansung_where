@@ -152,7 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     _initPrefs(); // SharedPreferences 초기화
     _checkCommentsOnAppStart(); // 댓글 확인 추가
-    _startCommentCheckTimer(); // 타이머 시작
+    //_startCommentCheckTimer(); // 타이머 시작
   }
 
   @override
@@ -163,7 +163,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 타이머 시작
   void _startCommentCheckTimer() {
-    _timer = Timer.periodic(Duration(minutes: 1), (timer) async {
+    _timer = Timer.periodic(Duration(minutes: 5), (timer) async {
       await _checkCommentsPeriodically(); // 주기적으로 댓글 확인
     });
   }
