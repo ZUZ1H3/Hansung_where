@@ -69,9 +69,3 @@
 - 관리자 권한을 가진 사용자는 공지사항 화면에서 글 작성 버튼이 활성화되며, 새로운 공지사항을 작성할 수 있음.
 - 일반 사용자는 공지사항 화면에서 작성된 공지사항 글을 열람하는 기능만 제공됨.
 - 제일 최근에 올라온 공지사항 1건은 항상 게시글 전체 키워드 리스트에 노란색 카드로 노출됨.
-
-## 팀원
-
-| [송희](https://github.com/felizsong) | [주지혜](https://github.com/ZUZ1H3) | 
-| ------------ | ------------- |
-| <img src="https://github.com/user-attachments/assets/d989d0ae-8829-4759-9aa6-1889206cdb6c" width="200" />|<img src="https://github.com/user-attachments/assets/20b39c67-2781-4bf0-9a11-5481fc4a43a7" width="200" />|
